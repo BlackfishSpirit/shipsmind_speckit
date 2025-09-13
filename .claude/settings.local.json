@@ -10,7 +10,10 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(git rm:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
