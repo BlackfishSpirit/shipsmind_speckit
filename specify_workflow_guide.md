@@ -532,12 +532,117 @@ The user requested comprehensive documentation that includes:
 - Team-friendly instructions
 - Complete chat session context
 
+## Remote Server Deployment & Management
+
+### SSH Key Authentication Setup
+
+For secure, passwordless access to remote servers:
+
+**Step 1: Generate SSH Key Pair**
+```bash
+# Generate new SSH key (if you don't have one)
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+
+# Copy public key to server
+ssh-copy-id user@your-server-ip
+
+# Test passwordless login
+ssh user@your-server-ip
+```
+
+**Step 2: SSH Configuration for Easy Access**
+Create `~/.ssh/config`:
+```
+Host production-server
+    HostName 192.168.0.103
+    User mike
+    ControlMaster auto
+    ControlPath ~/.ssh/control-%h-%p-%r
+    ControlPersist 600
+```
+
+Then use: `ssh production-server "command"`
+
+### Production Deployment Workflow
+
+**Environment Setup:**
+```bash
+# Copy project files to server
+tar --exclude='node_modules' --exclude='.next' --exclude='.git' -czf deployment.tar.gz .
+scp deployment.tar.gz user@server:~/project-name/
+ssh user@server "cd ~/project-name && tar -xzf deployment.tar.gz && rm deployment.tar.gz"
+
+# Install dependencies and build
+ssh user@server "cd ~/project-name && npm install --production && npm run build"
+
+# Start application
+ssh user@server "cd ~/project-name && npm start > app.log 2>&1 &"
+```
+
+**nginx Configuration for Next.js:**
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:3005;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+**Safe Deployment Process:**
+1. **Backup existing configuration**: `sudo cp /etc/nginx/sites-available/site /etc/nginx/sites-available/site.backup.$(date +%Y%m%d_%H%M%S)`
+2. **Test configuration**: `sudo nginx -t`
+3. **Deploy gradually**: Test locally first, then server, then production
+4. **Monitor services**: Check that all existing services remain running
+5. **Clear CDN cache**: Purge Cloudflare or other CDN caches after deployment
+
+### Team Remote Work Guidelines
+
+**For Development:**
+- Use SSH keys for all server access
+- Document server configurations in version control
+- Use staging environments that mirror production
+- Always backup before making changes
+
+**For Deployment:**
+- Follow the safe deployment checklist
+- Test in multiple environments before production
+- Use deployment scripts for consistency
+- Monitor application logs after deployment
+
+**Troubleshooting Remote Issues:**
+```bash
+# Check application status
+ssh server "ps aux | grep node"
+ssh server "curl -I http://localhost:3005"
+
+# View application logs  
+ssh server "tail -f ~/project-name/app.log"
+
+# Check nginx status and reload
+ssh server "sudo nginx -t && sudo systemctl reload nginx"
+
+# Monitor system resources
+ssh server "htop"
+```
+
 ## Next Steps
 
 1. **Use this guide** to implement the Specify workflow on your website project
-2. **Customize the examples** to match your specific requirements
-3. **Share with your team** to establish consistent development practices
-4. **Iterate and improve** the process based on your team's experience
+2. **Set up SSH keys** for secure remote server access  
+3. **Configure deployment scripts** using the remote deployment workflow
+4. **Share with your team** to establish consistent development and deployment practices
+5. **Iterate and improve** the process based on your team's experience
 
 ## Resources
 
