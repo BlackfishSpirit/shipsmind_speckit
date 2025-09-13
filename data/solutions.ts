@@ -1,4 +1,4 @@
-import { ShoppingBag, Scale, Calculator, Wrench } from "lucide-react";
+import { ShoppingBag, TrendingUp, Calculator, Wrench } from "lucide-react";
 
 export const solutions = [
   {
@@ -24,26 +24,26 @@ export const solutions = [
     href: "/solutions/retail"
   },
   {
-    id: "legal",
-    title: "AI for Law Firms", 
-    icon: Scale,
-    tagline: "Automate document review & case management",
+    id: "marketing",
+    title: "SEO and GEO Solutions", 
+    icon: TrendingUp,
+    tagline: "Dominate local search & digital marketing",
     problems: [
-      "Hours spent on document review",
-      "Manual case file management",
-      "Time tracking inefficiencies"
+      "Low search engine visibility",
+      "Manual content creation workload",
+      "Ineffective email campaigns"
     ],
     solutions: [
-      "AI-powered document analysis",
-      "Automated case workflows",
-      "Intelligent time tracking"
+      "AI-powered content creation",
+      "Automated keyword research",
+      "Bulk email & CRM campaign management"
     ],
     metrics: {
       timeSaved: "15 hours/week",
       revenueIncrease: "40%",
       roi: "45 days"
     },
-    href: "/solutions/legal"
+    href: "/solutions/marketing"
   },
   {
     id: "accounting",

@@ -78,38 +78,6 @@ export function SolutionsOverview() {
                     </ul>
                   </div>
 
-                  {/* Metrics Section */}
-                  <div className="pt-4 border-t border-gray-100">
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div>
-                        <div className="flex items-center justify-center mb-1">
-                          <Clock className="h-3 w-3 text-brand-600 mr-1" />
-                        </div>
-                        <div className="text-xs font-semibold text-gray-900">
-                          {solution.metrics.timeSaved}
-                        </div>
-                        <div className="text-xs text-gray-500">saved</div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-center mb-1">
-                          <TrendingUp className="h-3 w-3 text-green-600 mr-1" />
-                        </div>
-                        <div className="text-xs font-semibold text-gray-900">
-                          {solution.metrics.revenueIncrease}
-                        </div>
-                        <div className="text-xs text-gray-500">revenue</div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-center mb-1">
-                          <ArrowRight className="h-3 w-3 text-purple-600 mr-1" />
-                        </div>
-                        <div className="text-xs font-semibold text-gray-900">
-                          {solution.metrics.roi}
-                        </div>
-                        <div className="text-xs text-gray-500">ROI</div>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* CTA Button */}
                   <div className="pt-2">

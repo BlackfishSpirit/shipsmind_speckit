@@ -10,10 +10,9 @@ export function HeroSection() {
         <div className="text-center">
           {/* Main Headline */}
           <h1 className="mx-auto max-w-4xl text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-            Save{" "}
-            <span className="gradient-text">10+ Hours Per Week</span>{" "}
-            and Increase Revenue Through{" "}
-            <span className="gradient-text">Smart AI Automation</span>
+            Stop Drowning in Busywork.{" "}
+            <br />
+            <span className="gradient-text">Start Growing with AI.</span>
           </h1>
           
           {/* Subheadline */}
@@ -26,15 +25,15 @@ export function HeroSection() {
           <div className="mt-8 flex flex-col items-center space-y-4 sm:flex-row sm:justify-center sm:space-x-8 sm:space-y-0">
             <div className="flex items-center space-x-2 text-gray-700">
               <Clock className="h-5 w-5 text-brand-600" />
-              <span className="font-medium">Save 10+ hours weekly</span>
+              <span className="font-medium">Save time</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-700">
               <TrendingUp className="h-5 w-5 text-brand-600" />
-              <span className="font-medium">Increase revenue 20-30%</span>
+              <span className="font-medium">Increase Revenue</span>
             </div>
             <div className="flex items-center space-x-2 text-gray-700">
               <ArrowRight className="h-5 w-5 text-brand-600" />
-              <span className="font-medium">ROI in 30 days</span>
+              <span className="font-medium">Fast ROI</span>
             </div>
           </div>
 
@@ -44,11 +43,11 @@ export function HeroSection() {
               size="xl"
               className="bg-brand-600 hover:bg-brand-700 shadow-lg"
               onClick={() => {
-                // TODO: Add calendar booking integration
-                console.log("Schedule Assessment clicked");
+                // Scroll to contact form
+                document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
               }}
             >
-              Schedule Free AI Assessment
+              Let's start working together
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             
@@ -68,7 +67,7 @@ export function HeroSection() {
           {/* Trust Indicators */}
           <div className="mt-12 text-center">
             <p className="text-sm text-gray-500 mb-4">
-              Trusted by 100+ small businesses across industries
+              Trusted by small businesses across industries
             </p>
             <div className="flex justify-center items-center space-x-8 opacity-60">
               <div className="text-gray-400 text-sm font-medium">Retail Stores</div>

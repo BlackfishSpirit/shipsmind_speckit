@@ -9,32 +9,28 @@ const processSteps = [
     title: "Discovery & Assessment",
     description: "We analyze your current workflows and identify the biggest time-wasters and inefficiencies costing you money.",
     icon: Search,
-    deliverable: "AI Opportunity Brief with ROI projections",
-    duration: "1 week"
+    deliverable: "AI Opportunity Brief with ROI projections"
   },
   {
     step: 2, 
     title: "Solution Design",
     description: "We create a detailed implementation plan with specific AI tools and workflows tailored to your business needs.",
     icon: FileText,
-    deliverable: "Complete project roadmap & requirements",
-    duration: "1 week"
+    deliverable: "Complete project roadmap & requirements"
   },
   {
     step: 3,
     title: "Implementation", 
     description: "We build and configure your AI automation systems in short sprints, so you see progress every two weeks.",
     icon: Cog,
-    deliverable: "Working AI solutions deployed & tested",
-    duration: "2-4 weeks"
+    deliverable: "Working AI solutions deployed & tested"
   },
   {
     step: 4,
     title: "Training & Optimization",
     description: "We train your team and continuously optimize the system to maximize ROI and ensure long-term success.",
     icon: Rocket,
-    deliverable: "Team training & ongoing support plan",
-    duration: "Ongoing"
+    deliverable: "Team training & ongoing support plan"
   }
 ] as const;
 
@@ -76,10 +72,6 @@ export function ProcessOverview() {
                     <CardTitle className="text-xl font-semibold text-gray-900 mb-2">
                       {step.title}
                     </CardTitle>
-                    
-                    <div className="text-sm text-brand-600 font-medium">
-                      {step.duration}
-                    </div>
                   </CardHeader>
 
                   <CardContent className="pt-0">
@@ -110,50 +102,6 @@ export function ProcessOverview() {
           })}
         </div>
 
-        {/* Risk Mitigation Section */}
-        <div className="bg-gray-50 rounded-2xl p-8 mb-8">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Risk-Free Implementation
-            </h3>
-            <p className="text-gray-600">
-              We understand that investing in new technology feels risky. That's why we've designed 
-              our process to minimize your risk at every step.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <div className="h-6 w-6 bg-green-500 rounded-full"></div>
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-2">Phased Approach</h4>
-              <p className="text-sm text-gray-600">
-                You approve each phase before we move to the next. Multiple exit points give you complete control.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <div className="h-6 w-6 bg-blue-500 rounded-full"></div>
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-2">Transparent Pricing</h4>
-              <p className="text-sm text-gray-600">
-                Fixed project fees with no surprises. You know exactly what you're investing upfront.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <div className="h-6 w-6 bg-purple-500 rounded-full"></div>
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-2">ROI Guarantee</h4>
-              <p className="text-sm text-gray-600">
-                If you don't see measurable time savings within 30 days, we'll refund your investment.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
