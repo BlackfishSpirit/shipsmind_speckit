@@ -129,3 +129,6 @@ temp/
 
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md
+
+# Exclude separate project directories
+shipsmindweb/
