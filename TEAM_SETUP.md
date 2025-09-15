@@ -119,6 +119,23 @@ claude mcp list
 - UI/UX and accessibility validation
 - Automated feedback on every PR
 
+### **🎯 Visual Workflow Checklist** (New!)
+
+**Interactive Development Guide:**
+- Visit http://localhost:3000/dev/workflow (or whatever port your dev server uses)
+- Step-by-step checklist from environment setup to deployment
+- Progress tracking with user-specific persistence
+- Quick access to commands and documentation
+- Visual indicators for completed tasks and dependencies
+
+**Features:**
+- ✅ **Environment Setup**: Automated detection of Docker, MCP, and dependencies
+- ✅ **Feature Development**: Guided Specify CLI workflow
+- ✅ **AI Reviews**: One-click access to code, design, and security reviews
+- ✅ **Testing & Quality**: Linting, type-checking, and build validation
+- ✅ **Git Workflow**: Guided commit and PR creation process
+- ✅ **User Progress**: Saves your progress locally in `~/.shipsmind/workflows/`
+
 ---
 
 ## 🛠️ **Development Environment**

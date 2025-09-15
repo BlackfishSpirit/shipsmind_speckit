@@ -1,0 +1,330 @@
+{
+  "version": "1.0.0",
+  "sections": [
+    {
+      "id": "environment-setup",
+      "title": "🚀 Environment Setup",
+      "description": "Get your development environment ready for AI-powered development",
+      "icon": "⚙️",
+      "tasks": [
+        {
+          "id": "clone-repo",
+          "title": "Clone Repository",
+          "description": "Clone the shipsmind_speckit repository to your local machine",
+          "category": "setup",
+          "priority": "high",
+          "estimatedTime": "2 min",
+          "completed": false,
+          "commands": ["git clone <repository-url>", "cd shipsmind_speckit"],
+          "documentation": "/README.md"
+        },
+        {
+          "id": "install-dependencies",
+          "title": "Install Dependencies",
+          "description": "Install all project dependencies using pnpm",
+          "category": "setup",
+          "priority": "high",
+          "estimatedTime": "3 min",
+          "completed": false,
+          "dependencies": ["clone-repo"],
+          "commands": ["pnpm install"],
+          "autoDetectable": true
+        },
+        {
+          "id": "setup-environment",
+          "title": "Setup Environment Variables",
+          "description": "Copy and configure environment variables",
+          "category": "setup",
+          "priority": "high",
+          "estimatedTime": "2 min",
+          "completed": false,
+          "dependencies": ["clone-repo"],
+          "commands": ["cp .env.example .env.local"],
+          "documentation": "/TEAM_SETUP.md#environment-setup"
+        },
+        {
+          "id": "start-docker",
+          "title": "Start Docker Services",
+          "description": "Start development database and supporting services",
+          "category": "setup",
+          "priority": "high",
+          "estimatedTime": "2 min",
+          "completed": false,
+          "dependencies": ["install-dependencies"],
+          "commands": ["pnpm docker:dev"],
+          "autoDetectable": true
+        },
+        {
+          "id": "setup-database",
+          "title": "Initialize Database",
+          "description": "Generate Prisma client and push schema to database",
+          "category": "setup",
+          "priority": "high",
+          "estimatedTime": "2 min",
+          "completed": false,
+          "dependencies": ["start-docker"],
+          "commands": ["pnpm db:generate", "pnpm db:push"]
+        },
+        {
+          "id": "install-specify",
+          "title": "Install Specify CLI",
+          "description": "Install GitHub Specify CLI for spec-driven development",
+          "category": "setup",
+          "priority": "medium",
+          "estimatedTime": "3 min",
+          "completed": false,
+          "commands": ["pip install git+https://github.com/github/spec-kit.git"],
+          "documentation": "/TEAM_SETUP.md#specify-cli-setup"
+        },
+        {
+          "id": "install-playwright-mcp",
+          "title": "Install Playwright MCP",
+          "description": "Install Microsoft Playwright MCP for design reviews",
+          "category": "setup",
+          "priority": "medium",
+          "estimatedTime": "2 min",
+          "completed": false,
+          "commands": ["claude mcp add playwright -- npx @playwright/mcp@latest"],
+          "autoDetectable": true
+        },
+        {
+          "id": "verify-setup",
+          "title": "Verify Complete Setup",
+          "description": "Check that all services are running correctly",
+          "category": "setup",
+          "priority": "high",
+          "estimatedTime": "2 min",
+          "completed": false,
+          "dependencies": ["setup-database", "install-playwright-mcp"],
+          "commands": ["pnpm dev", "claude mcp list", "docker ps"],
+          "autoDetectable": true
+        }
+      ]
+    },
+    {
+      "id": "feature-development",
+      "title": "🛠️ Feature Development",
+      "description": "Spec-driven development workflow with AI assistance",
+      "icon": "💻",
+      "tasks": [
+        {
+          "id": "create-specification",
+          "title": "Create Feature Specification",
+          "description": "Use Specify CLI to describe what you want to build",
+          "category": "development",
+          "priority": "high",
+          "estimatedTime": "10 min",
+          "completed": false,
+          "commands": ["python specify_wrapper.py specify \"Your feature description\""],
+          "documentation": "/TEAM_SETUP.md#spec-driven-development-process"
+        },
+        {
+          "id": "generate-plan",
+          "title": "Generate Technical Plan",
+          "description": "Generate implementation approach and architecture",
+          "category": "development",
+          "priority": "high",
+          "estimatedTime": "5 min",
+          "completed": false,
+          "dependencies": ["create-specification"],
+          "commands": ["python specify_wrapper.py plan"]
+        },
+        {
+          "id": "break-into-tasks",
+          "title": "Break Down into Tasks",
+          "description": "Create actionable development tasks",
+          "category": "development",
+          "priority": "high",
+          "estimatedTime": "5 min",
+          "completed": false,
+          "dependencies": ["generate-plan"],
+          "commands": ["python specify_wrapper.py tasks"]
+        },
+        {
+          "id": "implement-feature",
+          "title": "Implement with Claude Code",
+          "description": "Use Claude Code to implement the planned features",
+          "category": "development",
+          "priority": "high",
+          "estimatedTime": "30-60 min",
+          "completed": false,
+          "dependencies": ["break-into-tasks"],
+          "documentation": "/TEAM_SETUP.md#using-specify-for-feature-development"
+        }
+      ]
+    },
+    {
+      "id": "ai-review-workflow",
+      "title": "🤖 AI Review Workflow",
+      "description": "Comprehensive code, design, and security reviews",
+      "icon": "🔍",
+      "tasks": [
+        {
+          "id": "pragmatic-code-review",
+          "title": "Pragmatic Code Review",
+          "description": "Comprehensive code quality and architecture review",
+          "category": "review",
+          "priority": "high",
+          "estimatedTime": "5 min",
+          "completed": false,
+          "dependencies": ["implement-feature"],
+          "commands": ["/pragmatic-code-review"],
+          "documentation": "/.claude/agents/pragmatic-code-review.md"
+        },
+        {
+          "id": "design-review",
+          "title": "Design Review",
+          "description": "UI/UX validation with Playwright browser automation",
+          "category": "review",
+          "priority": "medium",
+          "estimatedTime": "10 min",
+          "completed": false,
+          "dependencies": ["implement-feature"],
+          "commands": ["/design-review"],
+          "documentation": "/.claude/agents/design-review.md"
+        },
+        {
+          "id": "security-review",
+          "title": "Security Review",
+          "description": "Security vulnerability analysis and OWASP compliance",
+          "category": "review",
+          "priority": "high",
+          "estimatedTime": "5 min",
+          "completed": false,
+          "dependencies": ["implement-feature"],
+          "commands": ["/security-review"],
+          "documentation": "/.claude/commands/security-review.md"
+        },
+        {
+          "id": "fix-review-issues",
+          "title": "Address Review Feedback",
+          "description": "Fix any critical or high-priority issues found in reviews",
+          "category": "review",
+          "priority": "high",
+          "estimatedTime": "15-30 min",
+          "completed": false,
+          "dependencies": ["pragmatic-code-review", "design-review", "security-review"]
+        }
+      ]
+    },
+    {
+      "id": "testing-validation",
+      "title": "✅ Testing & Validation",
+      "description": "Ensure code quality and functionality",
+      "icon": "🧪",
+      "tasks": [
+        {
+          "id": "run-linting",
+          "title": "Run Code Linting",
+          "description": "Check code style and fix automatic issues",
+          "category": "review",
+          "priority": "high",
+          "estimatedTime": "2 min",
+          "completed": false,
+          "commands": ["pnpm lint", "pnpm lint:fix"],
+          "autoDetectable": true
+        },
+        {
+          "id": "type-checking",
+          "title": "TypeScript Type Checking",
+          "description": "Verify all TypeScript types are correct",
+          "category": "review",
+          "priority": "high",
+          "estimatedTime": "2 min",
+          "completed": false,
+          "commands": ["pnpm type-check"],
+          "autoDetectable": true
+        },
+        {
+          "id": "format-code",
+          "title": "Format Code",
+          "description": "Ensure consistent code formatting",
+          "category": "review",
+          "priority": "medium",
+          "estimatedTime": "1 min",
+          "completed": false,
+          "commands": ["pnpm format"],
+          "autoDetectable": true
+        },
+        {
+          "id": "test-locally",
+          "title": "Test in Development",
+          "description": "Manual testing of new features in dev environment",
+          "category": "review",
+          "priority": "high",
+          "estimatedTime": "10 min",
+          "completed": false,
+          "dependencies": ["run-linting", "type-checking"],
+          "commands": ["pnpm dev"]
+        },
+        {
+          "id": "build-production",
+          "title": "Test Production Build",
+          "description": "Verify the application builds successfully for production",
+          "category": "review",
+          "priority": "high",
+          "estimatedTime": "3 min",
+          "completed": false,
+          "dependencies": ["test-locally"],
+          "commands": ["pnpm build"],
+          "autoDetectable": true
+        }
+      ]
+    },
+    {
+      "id": "git-workflow",
+      "title": "📝 Git Workflow",
+      "description": "Commit changes and create pull requests",
+      "icon": "🔀",
+      "tasks": [
+        {
+          "id": "stage-changes",
+          "title": "Stage Changes",
+          "description": "Add your changes to git staging area",
+          "category": "deployment",
+          "priority": "high",
+          "estimatedTime": "1 min",
+          "completed": false,
+          "dependencies": ["build-production"],
+          "commands": ["git add ."],
+          "autoDetectable": true
+        },
+        {
+          "id": "commit-changes",
+          "title": "Commit Changes",
+          "description": "Create a descriptive commit message",
+          "category": "deployment",
+          "priority": "high",
+          "estimatedTime": "2 min",
+          "completed": false,
+          "dependencies": ["stage-changes"],
+          "commands": ["git commit -m \"Your descriptive commit message\""],
+          "documentation": "/PRODUCTION_DEPLOYMENT.md#committing-changes-with-git"
+        },
+        {
+          "id": "push-branch",
+          "title": "Push to Remote",
+          "description": "Push your feature branch to remote repository",
+          "category": "deployment",
+          "priority": "high",
+          "estimatedTime": "1 min",
+          "completed": false,
+          "dependencies": ["commit-changes"],
+          "commands": ["git push origin your-feature-branch"]
+        },
+        {
+          "id": "create-pull-request",
+          "title": "Create Pull Request",
+          "description": "Create PR for team review and automated CI checks",
+          "category": "deployment",
+          "priority": "high",
+          "estimatedTime": "5 min",
+          "completed": false,
+          "dependencies": ["push-branch"],
+          "commands": ["gh pr create --title \"Your PR title\" --body \"Description\""],
+          "documentation": "/.github/workflows/claude-code-review.yml"
+        }
+      ]
+    }
+  ]
+}

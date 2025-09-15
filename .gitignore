@@ -132,4 +132,8 @@ temp/
 
 # Exclude separate project directories
 shipsmindweb/
-# Deployment artifacts\ndeployment*.tar.gz
+# Deployment artifacts
+deployment*.tar.gz
+
+# User workflow progress (local only)
+.shipsmind/

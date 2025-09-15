@@ -23,7 +23,9 @@
       "WebFetch(domain:shipsmind.com)",
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm add:*)"
     ],
     "deny": [],
     "ask": []
