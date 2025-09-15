@@ -20,7 +20,10 @@
       "Bash(ssh:*)",
       "Bash(tar:*)",
       "Bash(scp:*)",
-      "WebFetch(domain:shipsmind.com)"
+      "WebFetch(domain:shipsmind.com)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [],
     "ask": []

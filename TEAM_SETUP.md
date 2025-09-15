@@ -37,6 +37,8 @@ pnpm dev
 
 ## 🤖 **AI-Powered Development Workflow**
 
+This project includes advanced AI agents for code review, design review, and security analysis using Claude Code with Microsoft Playwright MCP integration.
+
 ### **Specify CLI Setup**
 
 **Install Specify CLI**:
@@ -78,6 +80,44 @@ python specify_wrapper.py tasks
 - Use Claude Code in VS Code
 - Reference the generated plan and tasks
 - Let AI implement the features
+
+### **AI Review Agents Setup**
+
+**Available Agents & Commands:**
+- **Pragmatic Code Review**: Comprehensive code quality and architecture review (agent + slash command)
+- **Design Review**: UI/UX validation with Playwright browser automation (agent + slash command)
+- **Security Review**: Security vulnerability analysis (slash command)
+- **GitHub Actions**: Automated PR reviews with Claude Code integration
+
+**Install Playwright MCP** (Required for design reviews):
+```bash
+claude mcp add playwright -- npx @playwright/mcp@latest
+```
+
+**Verify MCP Installation**:
+```bash
+claude mcp list
+# Should show: playwright: npx @playwright/mcp@latest - ✓ Connected
+```
+
+**MCP Capabilities:**
+- **Browser Automation**: Navigate, click, type, screenshot, test responsiveness
+- **IDE Integration**: Get diagnostics, execute code, lint analysis
+- **Semantic Search**: Find relevant code patterns and documentation
+
+### **GitHub Actions Setup** (Optional)
+
+**Enable Automated PR Reviews:**
+1. Add `CLAUDE_CODE_OAUTH_TOKEN` to your repository secrets
+2. GitHub Actions workflow is pre-configured in `.github/workflows/claude-code-review.yml`
+3. Reviews will automatically run on every pull request
+
+**Features:**
+- Comprehensive code quality analysis
+- Security vulnerability detection
+- Performance and scalability review
+- UI/UX and accessibility validation
+- Automated feedback on every PR
 
 ---
 
@@ -176,6 +216,42 @@ The project includes optimized VS Code settings:
 ---
 
 ## 🚀 **Building New Features**
+
+### **AI-Powered Code Review Workflow**
+
+**1. Code Review Agent**
+Use after implementing features or before merging:
+```
+"I've finished implementing the user dashboard. Please review it using the pragmatic-code-review agent."
+```
+
+**2. Design Review Agent**
+Use for UI/UX changes with Playwright automation:
+```
+"Please conduct a design review of the new homepage layout using the design-review agent."
+```
+
+**3. Security Review Command**
+Use the slash command for security analysis:
+```
+/security-review
+```
+
+**4. New Slash Commands Available**
+Complete git-based reviews of current branch changes:
+```
+/pragmatic-code-review
+/design-review
+```
+
+**5. GitHub Actions Integration**
+Automated code review on every pull request via `.github/workflows/claude-code-review.yml`
+
+**Agent Features:**
+- **Pragmatic Code Review**: Architecture, security, performance, maintainability analysis
+- **Design Review**: Responsive testing, accessibility compliance, visual consistency
+- **Security Review**: Vulnerability detection, OWASP compliance, penetration testing
+- **Automated PR Reviews**: GitHub Actions integration for continuous quality
 
 ### **Spec-Driven Development Process**
 

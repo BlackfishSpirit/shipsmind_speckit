@@ -1,0 +1,92 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          track_progress: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Perform a comprehensive code review with the following focus areas:
+
+            1. **Code Quality & Architecture**
+               - Clean code principles and best practices
+               - Proper error handling and edge cases
+               - Code readability and maintainability
+               - Architectural design alignment
+
+            2. **Security**
+               - Check for potential security vulnerabilities
+               - Validate input sanitization
+               - Review authentication/authorization logic
+               - OWASP Top 10 compliance
+
+            3. **Performance & Scalability**
+               - Identify potential performance bottlenecks
+               - Review database queries for efficiency (N+1 queries)
+               - Check for memory leaks or resource issues
+               - Frontend bundle size impact
+
+            4. **Testing Strategy**
+               - Verify adequate test coverage
+               - Review test quality and edge cases
+               - Check for missing test scenarios
+               - Integration test considerations
+
+            5. **UI/UX & Accessibility**
+               - Visual consistency and design standards
+               - Responsive design compliance
+               - WCAG 2.1 AA accessibility standards
+               - User experience flow validation
+
+            6. **Documentation & Dependencies**
+               - Ensure code is properly documented
+               - Verify README updates for new features
+               - Check API documentation accuracy
+               - Review new dependency necessity and security
+
+            ## Project Context
+            This is a Next.js 14 TypeScript project using:
+            - **Framework**: Next.js 14 with App Router
+            - **Database**: PostgreSQL with Prisma ORM
+            - **Styling**: Tailwind CSS + shadcn/ui
+            - **Authentication**: Clerk
+            - **Development**: Docker services, pnpm package manager
+
+            ## Review Guidelines
+            - Use the Pragmatic Quality framework: balance engineering excellence with development velocity
+            - Focus on substance over style - prioritize architecture, security, and performance
+            - Categorize issues as [Critical/Blocker], [Improvement], or [Nit]
+            - Be constructive and assume good intent
+            - Provide specific, actionable feedback with engineering principle rationale
+
+            Provide detailed feedback using inline comments for specific issues.
+            Use top-level comments for general observations or praise.
+
+            Use the repository's project documentation for guidance on style and conventions. Be constructive and helpful in your feedback.
+
+            Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
+
+          claude_args: '--model sonnet --timeout 300'
