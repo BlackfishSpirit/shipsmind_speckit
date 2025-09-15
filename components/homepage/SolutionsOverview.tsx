@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { solutions } from "@/data/solutions";
-import { ArrowRight, CheckCircle, Clock, TrendingUp } from "lucide-react";
+import { ArrowRight, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
 export function SolutionsOverview() {

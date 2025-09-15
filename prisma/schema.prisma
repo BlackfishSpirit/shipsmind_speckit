@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Vertical {
+  retail
+  legal
+  accounting
+  trades
+  other
+}
+
+enum LeadStatus {
+  new
+  contacted
+  qualified
+  converted
+}
+
+// Solutions (Vertical-specific offerings)
+model Solution {
+  id                  String    @id @default(cuid())
+  vertical           Vertical
+  title              String
+  slug               String    @unique
+  problemDescription String    @map("problem_description")
+  solutionSummary    String    @map("solution_summary")
+  features           Json[]
+  roiMetrics         Json[]    @map("roi_metrics")
+  caseStudyId        String?   @map("case_study_id")
+  caseStudy          CaseStudy? @relation(fields: [caseStudyId], references: [id])
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@map("solutions")
+}
+
+// Case Studies
+model CaseStudy {
+  id                   String     @id @default(cuid())
+  clientName           String     @map("client_name")
+  clientIndustry       String     @map("client_industry")
+  problemStatement     String     @map("problem_statement")
+  solutionImplemented  String     @map("solution_implemented")
+  results              Json[]     // {metric: "Time Saved", value: "15 hours/week"}
+  testimonialQuote     String?    @map("testimonial_quote")
+  featured             Boolean    @default(false)
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  solutions            Solution[]
+
+  @@map("case_studies")
+}
+
+// Lead Capture
+model Lead {
+  id         String     @id @default(cuid())
+  name       String
+  email      String
+  phone      String?
+  company    String
+  vertical   Vertical
+  painPoints String[]   @map("pain_points")
+  source     String     // landing page, blog, etc.
+  status     LeadStatus @default(new)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  @@map("leads")
+}
+
+// Blog Posts (metadata, content in MDX)
+model BlogPost {
+  id             String    @id @default(cuid())
+  title          String
+  slug           String    @unique
+  excerpt        String
+  targetKeywords String[]  @map("target_keywords")
+  vertical       String?
+  published      Boolean   @default(false)
+  publishDate    DateTime? @map("publish_date")
+  mdxFilePath    String    @map("mdx_file_path")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@map("blog_posts")
+}
+
+// User management for admin access
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("admin")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}

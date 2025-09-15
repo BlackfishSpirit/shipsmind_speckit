@@ -1,7 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, Phone, Mail } from "lucide-react";
 import { useState } from "react";
 
 export function CTASection() {

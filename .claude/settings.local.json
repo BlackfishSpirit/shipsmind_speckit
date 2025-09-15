@@ -13,7 +13,14 @@
       "Bash(git commit:*)",
       "Bash(pnpm install:*)",
       "Bash(pnpm dev:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(mdp list:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm db:push:*)",
+      "Bash(ssh:*)",
+      "Bash(tar:*)",
+      "Bash(scp:*)",
+      "WebFetch(domain:shipsmind.com)"
     ],
     "deny": [],
     "ask": []

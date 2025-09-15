@@ -132,3 +132,4 @@ temp/
 
 # Exclude separate project directories
 shipsmindweb/
+# Deployment artifacts\ndeployment*.tar.gz
