@@ -3,6 +3,23 @@
 
 Welcome to the ShipsMind project! This guide will get you up and running with our development workflow using **Specify + Claude Code** for rapid AI-assisted development.
 
+## 🎯 **Start Here: Interactive Workflow Checklist**
+
+**📋 http://localhost:3000/dev/workflow**
+
+**New to the project?** Use our interactive workflow dashboard that guides you through every step:
+- ✅ **Real-time progress tracking** with user-specific persistence
+- ✅ **Step-by-step guidance** with color-coded tasks and time estimates
+- ✅ **Copy-paste commands** with one-click copying
+- ✅ **Auto-detection** of completed tasks
+- ✅ **Documentation links** for detailed explanations
+
+**To access the checklist:**
+1. Run the quick-start script: `./quick-start.bat` (Windows) or `./quick-start.sh` (macOS/Linux)
+2. Or manually start: `pnpm dev` then visit http://localhost:3000/dev/workflow
+
+---
+
 ## 🎯 **Quick Start (5 Minutes)**
 
 ### **1. Clone and Install**
