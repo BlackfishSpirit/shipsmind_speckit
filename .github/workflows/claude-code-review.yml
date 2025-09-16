@@ -95,4 +95,4 @@ jobs:
 
             Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
 
-          claude_args: '--model sonnet --timeout 300'
+          claude_args: "--model sonnet --timeout 300"

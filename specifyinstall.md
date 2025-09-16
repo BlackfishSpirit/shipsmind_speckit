@@ -22,6 +22,7 @@ pip install git+https://github.com/github/spec-kit.git
 The Specify CLI uses Unicode characters that don't display properly in Windows console. Create a wrapper script to handle this:
 
 **File: `specify_wrapper.py`**
+
 ```python
 #!/usr/bin/env python
 import os
@@ -37,8 +38,8 @@ specify_path = r"C:/Users/Michael/AppData/Roaming/Python/Python313/Scripts/speci
 
 try:
     # Run the specify command with all arguments passed through
-    result = subprocess.run([sys.executable, specify_path] + sys.argv[1:], 
-                          capture_output=False, 
+    result = subprocess.run([sys.executable, specify_path] + sys.argv[1:],
+                          capture_output=False,
                           text=True,
                           encoding='utf-8')
     sys.exit(result.returncode)
@@ -59,6 +60,7 @@ python specify_wrapper.py check
 ```
 
 Expected output:
+
 ```
 Check Available Tools
 ├── ● Git version control (available)
@@ -100,17 +102,21 @@ python E:\path\to\specify_wrapper.py [command]
 ### Common Issues
 
 **Issue:** `UnicodeEncodeError: 'charmap' codec can't encode characters`
+
 - **Solution:** Use the `specify_wrapper.py` script instead of calling specify directly
 
 **Issue:** `specify.exe not found`
+
 - **Solution:** Update the `specify_path` variable in the wrapper script to match your Python Scripts directory
 
 **Issue:** Commands timeout during `init`
+
 - **Solution:** The CLI may be waiting for interactive input. Try running in a more capable terminal like Windows Terminal
 
 ### Path Configuration
 
 Find your Python Scripts directory:
+
 ```python
 import sys
 import os

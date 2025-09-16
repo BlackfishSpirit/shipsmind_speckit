@@ -1,18 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { NextResponse } from "next/server";
+import { promises as fs } from "fs";
+import path from "path";
 
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), 'data', 'workflow-checklist.json');
-    const fileContents = await fs.readFile(filePath, 'utf8');
+    const filePath = path.join(
+      process.cwd(),
+      "data",
+      "workflow-checklist.json"
+    );
+    const fileContents = await fs.readFile(filePath, "utf8");
     const workflowData = JSON.parse(fileContents);
 
     return NextResponse.json(workflowData);
   } catch (error) {
-    console.error('Error loading workflow data:', error);
+    console.error("Error loading workflow data:", error);
     return NextResponse.json(
-      { error: 'Failed to load workflow data' },
+      { error: "Failed to load workflow data" },
       { status: 500 }
     );
   }

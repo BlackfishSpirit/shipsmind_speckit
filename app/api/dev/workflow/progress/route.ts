@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import os from 'os';
-import { UserProgress } from '@/types/workflow';
+import { NextRequest, NextResponse } from "next/server";
+import { promises as fs } from "fs";
+import path from "path";
+import os from "os";
+import { UserProgress } from "@/types/workflow";
 
 // Get user-specific progress file path
 function getUserProgressPath(username: string): string {
   const homeDir = os.homedir();
-  const shipsmindDir = path.join(homeDir, '.shipsmind', 'workflows');
+  const shipsmindDir = path.join(homeDir, ".shipsmind", "workflows");
   return path.join(shipsmindDir, `${username}.json`);
 }
 
@@ -23,11 +23,11 @@ async function ensureDirectoryExists(dirPath: string): Promise<void> {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const username = searchParams.get('user');
+    const username = searchParams.get("user");
 
     if (!username) {
       return NextResponse.json(
-        { error: 'Username is required' },
+        { error: "Username is required" },
         { status: 400 }
       );
     }
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const progressPath = getUserProgressPath(username);
 
     try {
-      const fileContents = await fs.readFile(progressPath, 'utf8');
+      const fileContents = await fs.readFile(progressPath, "utf8");
       const userProgress = JSON.parse(fileContents);
       return NextResponse.json(userProgress);
     } catch (error) {
@@ -43,9 +43,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(null, { status: 404 });
     }
   } catch (error) {
-    console.error('Error loading user progress:', error);
+    console.error("Error loading user progress:", error);
     return NextResponse.json(
-      { error: 'Failed to load user progress' },
+      { error: "Failed to load user progress" },
       { status: 500 }
     );
   }
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     if (!userProgress.username) {
       return NextResponse.json(
-        { error: 'Username is required' },
+        { error: "Username is required" },
         { status: 400 }
       );
     }
@@ -69,13 +69,17 @@ export async function POST(request: NextRequest) {
     await ensureDirectoryExists(progressDir);
 
     // Save user progress
-    await fs.writeFile(progressPath, JSON.stringify(userProgress, null, 2), 'utf8');
+    await fs.writeFile(
+      progressPath,
+      JSON.stringify(userProgress, null, 2),
+      "utf8"
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error saving user progress:', error);
+    console.error("Error saving user progress:", error);
     return NextResponse.json(
-      { error: 'Failed to save user progress' },
+      { error: "Failed to save user progress" },
       { status: 500 }
     );
   }
