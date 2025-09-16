@@ -35,6 +35,106 @@ pnpm dev
 
 ---
 
+## 🎯 **Daily Startup Commands**
+
+When opening this project in VSCode, run these commands to get everything ready:
+
+### **Required Startup Commands**
+```bash
+# 1. Start the development server (most important)
+pnpm dev
+
+# 2. Verify Claude Code MCP servers are connected
+claude mcp list
+```
+
+### **Expected MCP Output**
+```
+✓ playwright: Browser automation & testing - Connected
+✓ context7: Up-to-date documentation - Connected
+✓ github: GitHub repository integration - Connected
+✓ shadcn: shadcn/ui component library - Connected
+```
+
+### **Optional Commands (as needed)**
+```bash
+# If using Docker services for database
+docker-compose up -d
+
+# If database needs setup/reset
+pnpm db:push
+
+# If you need Prisma Studio for database management
+pnpm db:studio
+```
+
+### **Quick Health Check**
+```bash
+# Verify everything is working
+pnpm dev &
+claude mcp list
+curl http://localhost:3000  # Should return HTML
+```
+
+**Most Important**: The `pnpm dev` command starts your Next.js development server. Your MCP servers automatically connect when you use Claude Code, so no manual activation needed.
+
+### **Start with the Task Tracking Dashboard**
+```bash
+# After starting the dev server, visit the interactive workflow guide
+# Open in browser: http://localhost:3000/dev/workflow
+```
+
+**What it provides:**
+- ✅ **Step-by-step checklist** from environment setup to deployment
+- ✅ **Progress tracking** with user-specific persistence
+- ✅ **Quick access** to commands and documentation
+- ✅ **Visual indicators** for completed tasks and dependencies
+
+---
+
+## 🎯 **Interactive Task Tracking Dashboard**
+
+**Access the guided workflow interface at: http://localhost:3000/dev/workflow**
+
+### **How to Use the Task Tracker**
+
+**1. First Time Setup:**
+- Start your dev server with `pnpm dev`
+- Navigate to http://localhost:3000/dev/workflow
+- The system will detect your current environment status
+- Follow the color-coded checklist items
+
+**2. Progress Tracking:**
+```bash
+# Your progress is automatically saved to:
+~/.shipsmind/workflows/
+```
+- ✅ **Green checkmarks**: Completed tasks
+- 🔄 **Yellow indicators**: In progress or needs attention
+- ❌ **Red alerts**: Missing dependencies or errors
+- 📋 **Blue info**: Instructions or next steps
+
+**3. Available Workflow Sections:**
+- **Environment Setup**: Automated detection of Docker, MCP, and dependencies
+- **Feature Development**: Guided Specify CLI workflow with examples
+- **AI Reviews**: One-click access to code, design, and security reviews
+- **Testing & Quality**: Linting, type-checking, and build validation
+- **Git Workflow**: Guided commit and PR creation process
+
+**4. Interactive Features:**
+- **Copy buttons**: Click to copy commands to clipboard
+- **Status detection**: Real-time check of running services
+- **Documentation links**: Quick access to relevant guides
+- **Command execution**: Some tasks can be run directly from the interface
+
+**5. Team Collaboration:**
+- Each team member has their own progress tracking
+- Shared project status is visible to all team members
+- Dependencies between tasks are clearly marked
+- Blockers and issues are highlighted for team coordination
+
+---
+
 ## 🤖 **AI-Powered Development Workflow**
 
 This project includes advanced AI agents for code review, design review, and security analysis using Claude Code with Microsoft Playwright MCP integration.
@@ -119,22 +219,6 @@ claude mcp list
 - UI/UX and accessibility validation
 - Automated feedback on every PR
 
-### **🎯 Visual Workflow Checklist** (New!)
-
-**Interactive Development Guide:**
-- Visit http://localhost:3000/dev/workflow (or whatever port your dev server uses)
-- Step-by-step checklist from environment setup to deployment
-- Progress tracking with user-specific persistence
-- Quick access to commands and documentation
-- Visual indicators for completed tasks and dependencies
-
-**Features:**
-- ✅ **Environment Setup**: Automated detection of Docker, MCP, and dependencies
-- ✅ **Feature Development**: Guided Specify CLI workflow
-- ✅ **AI Reviews**: One-click access to code, design, and security reviews
-- ✅ **Testing & Quality**: Linting, type-checking, and build validation
-- ✅ **Git Workflow**: Guided commit and PR creation process
-- ✅ **User Progress**: Saves your progress locally in `~/.shipsmind/workflows/`
 
 ---
 
@@ -380,6 +464,129 @@ netstat -tlnp | grep :3000
 - **Production deploys**: Follow `PRODUCTION_DEPLOYMENT.md` exactly
 - **Environment variables**: Never commit secrets, use `.env.example` template
 - **Database changes**: Always test migrations in development first
+
+---
+
+## 🌐 **Remote Development via SSH Tunnel**
+
+For team members who need to develop remotely on the Ubuntu server (192.168.0.103) through the Cloudflare tunnel:
+
+### **Prerequisites**
+- Windows machine with PowerShell
+- Access to the project (team member permissions)
+
+### **SSH Tunnel Setup Steps**
+
+**1. Install cloudflared:**
+```powershell
+# Download and install cloudflared
+New-Item -ItemType Directory -Path "C:\cloudflared" -Force
+Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile "C:\cloudflared\cloudflared.exe"
+
+# Test installation
+C:\cloudflared\cloudflared.exe version
+```
+
+**2. Add cloudflared to PATH:**
+```powershell
+# Add to current session
+$env:PATH += ";C:\cloudflared"
+
+# Add permanently to user PATH
+$userPath = [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::User)
+if ($userPath -notlike "*C:\cloudflared*") {
+    [Environment]::SetEnvironmentVariable("PATH", "$userPath;C:\cloudflared", [EnvironmentVariableTarget]::User)
+}
+
+# Verify PATH works
+cloudflared version
+```
+
+**3. Generate SSH key pair:**
+```powershell
+# Generate new SSH key (save as 'shipsmind-key')
+ssh-keygen -t ed25519 -f shipsmind-key
+```
+
+**4. Copy SSH key to server** (while on LAN or ask admin to do this):
+```bash
+# Copy public key to server
+scp shipsmind-key.pub mike@192.168.0.103:~/
+
+# SSH to server and set up key
+ssh mike@192.168.0.103
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+cat ~/shipsmind-key.pub >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+rm ~/shipsmind-key.pub
+exit
+```
+
+**5. Authenticate with Cloudflare:**
+```powershell
+# Login to Cloudflare (opens browser)
+cloudflared tunnel login
+
+# Verify tunnel access
+cloudflared tunnel list
+```
+
+**6. Create SSH config file:**
+Create `C:\Users\[YourUsername]\.ssh\config`:
+```ini
+Host shipsmind-remote
+    HostName ssh.shipsmind.com
+    User mike
+    IdentityFile C:\Users\[YourUsername]\shipsmind-key
+    ProxyCommand cloudflared access ssh --hostname %h
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
+```
+
+**7. Test SSH connection:**
+```powershell
+ssh shipsmind-remote
+```
+
+### **VS Code Remote Development Setup**
+
+**1. Install VS Code Extension:**
+- Install "Remote - SSH" extension in VS Code
+
+**2. Connect to Remote Server:**
+- Press `Ctrl+Shift+P`
+- Type "Remote-SSH: Connect to Host"
+- Select `shipsmind-remote`
+- VS Code opens connected to the Ubuntu server
+
+**3. Start Development:**
+```bash
+# On the remote server, navigate to project
+cd /path/to/shipsmind_speckit
+
+# Start development server
+pnpm dev
+
+# Access via tunnel: https://shipsmind.com
+```
+
+### **Team Development Workflow**
+
+**Daily Remote Development:**
+1. Connect via VS Code Remote-SSH to `shipsmind-remote`
+2. Navigate to project directory
+3. Run `pnpm dev` to start development server
+4. Access application via https://shipsmind.com
+5. Use Claude Code with full MCP capabilities (all servers work remotely)
+6. Commit and push changes through VS Code or terminal
+
+**Benefits:**
+- ✅ **Full development environment** on powerful Ubuntu server
+- ✅ **All MCP servers available** (playwright, context7, github, shadcn)
+- ✅ **Secure access** through Cloudflare tunnel
+- ✅ **Team collaboration** on same server environment
+- ✅ **Production-like setup** for testing
 
 ---
 

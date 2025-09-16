@@ -75,6 +75,12 @@ jobs:
             - **Authentication**: Clerk
             - **Development**: Docker services, pnpm package manager
 
+            ## MCP Resources Available
+            You have access to multiple MCP servers to enhance your review:
+            - **Context7 MCP**: Add "use context7" for up-to-date documentation and best practices
+            - **shadcn/ui MCP**: Direct access to component library data for accurate component analysis
+            - **GitHub MCP**: Repository integration for analyzing related PRs, issues, and project context
+
             ## Review Guidelines
             - Use the Pragmatic Quality framework: balance engineering excellence with development velocity
             - Focus on substance over style - prioritize architecture, security, and performance

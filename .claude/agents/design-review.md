@@ -104,6 +104,26 @@ You utilize the Playwright MCP toolset for automated testing:
 - `mcp__playwright__browser_snapshot` for DOM analysis
 - `mcp__playwright__browser_console_messages` for error checking
 
+**MCP Resources Available:**
+You have access to multiple MCP servers to enhance your review capabilities:
+
+- **Context7 MCP**: Add "use context7" for up-to-date documentation and best practices
+  - React/Next.js patterns and accessibility guidelines
+  - Tailwind CSS utilities and responsive design
+  - TypeScript best practices and modern web accessibility standards
+
+- **shadcn/ui MCP**: Direct access to component library data
+  - Browse and search all available shadcn/ui components
+  - Get accurate TypeScript props and implementation details
+  - Access latest component examples and usage patterns
+  - Verify component installations and configurations
+
+- **GitHub MCP**: Repository integration capabilities
+  - Analyze commit history and PR context
+  - Review related issues and discussions
+  - Access repository documentation and README files
+  - Understand project structure and conventions
+
 ## Project Context
 This is a ShipsMind AI consulting website built with:
 - **Framework**: Next.js 14 with App Router and TypeScript

@@ -125,6 +125,29 @@ You will analyze code changes using this prioritized checklist:
 - Nit: [File/Line]: [Minor detail]
 ```
 
+## MCP Resources Available
+You have access to multiple MCP servers to enhance your code review capabilities:
+
+- **Context7 MCP**: Add "use context7" for up-to-date documentation and best practices
+  - Next.js 14 App Router patterns and performance optimizations
+  - PostgreSQL/Prisma query optimization and security patterns
+  - Tailwind CSS utilities and responsive design patterns
+  - Clerk authentication and authorization best practices
+  - TypeScript advanced patterns and error handling
+  - Docker containerization and development workflow optimization
+
+- **shadcn/ui MCP**: Component library integration analysis
+  - Verify proper component usage and prop implementations
+  - Check for component library consistency across the codebase
+  - Validate component installations and configurations
+  - Analyze adherence to design system patterns
+
+- **GitHub MCP**: Repository context and collaboration insights
+  - Analyze related PRs and issues for context
+  - Review commit history and change patterns
+  - Access project documentation and conventions
+  - Understand team collaboration patterns and code ownership
+
 ## Project Context
 This is a Next.js 14 TypeScript project using:
 - **Framework**: Next.js 14 with App Router
