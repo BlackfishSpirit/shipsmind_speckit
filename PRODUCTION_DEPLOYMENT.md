@@ -1,4 +1,5 @@
 # Production Deployment Guide
+
 ## ShipsMind AI Consulting Website
 
 This document contains the final working configuration for deploying the shipsmind_speckit application to production.
@@ -29,6 +30,7 @@ Internet → Cloudflare CDN → Cloudflare Tunnel → nginx (port 80) → Next.j
 ## Environment Configuration
 
 ### Environment Variables (.env)
+
 ```bash
 # Database
 DATABASE_URL="postgresql://speckit_user:speckit_password@localhost:5432/shipsmind_speckit_production"
@@ -43,6 +45,7 @@ NODE_ENV=production
 ```
 
 ### Key Notes:
+
 - Use `.env` file (not `.env.local`) for Prisma compatibility
 - Database runs on port 5432 (not 5433 as in development)
 - Production secrets should be updated from defaults
@@ -50,6 +53,7 @@ NODE_ENV=production
 ## Database Setup
 
 ### PostgreSQL Container
+
 ```bash
 # Start PostgreSQL container
 docker run -d --name shipsmind-postgres \
@@ -64,6 +68,7 @@ pnpm db:push
 ```
 
 ### Container Status
+
 ```bash
 # Check if container is running
 docker ps | grep shipsmind-postgres
@@ -75,6 +80,7 @@ docker logs shipsmind-postgres
 ## nginx Configuration
 
 ### Working Configuration (/etc/nginx/sites-available/shipsmind)
+
 ```nginx
 server {
     listen 80;
@@ -134,6 +140,7 @@ server {
 ```
 
 ### nginx Setup Commands
+
 ```bash
 # Enable site (symlink already exists)
 ls -la /etc/nginx/sites-enabled/shipsmind
@@ -148,6 +155,7 @@ sudo systemctl restart nginx
 ## Cloudflare Configuration
 
 ### Tunnel Configuration (/etc/cloudflared/config.yml)
+
 ```yaml
 tunnel: d7f4eea5-9b23-4563-b41b-0af955e3f117
 token: [REDACTED]
@@ -164,6 +172,7 @@ ingress:
 ```
 
 ### Tunnel Service Status
+
 ```bash
 # Check tunnel status
 ps aux | grep cloudflared
@@ -175,6 +184,7 @@ ps aux | grep cloudflared
 ## Application Setup
 
 ### Dependencies Installation
+
 ```bash
 # Install pnpm (if needed)
 curl -fsSL https://get.pnpm.io/install.sh | sh -
@@ -191,6 +201,7 @@ pnpm build
 ```
 
 ### Application Startup
+
 ```bash
 # Start in production mode
 PORT=3005 NODE_ENV=production pnpm start
@@ -200,6 +211,7 @@ PORT=3005 NODE_ENV=production pnpm start > app.log 2>&1 &
 ```
 
 ### Application Status
+
 ```bash
 # Check if app is running
 ps aux | grep next
@@ -213,7 +225,9 @@ curl -I http://localhost:3005
 ## Deployment Process
 
 ### Complete Deployment Steps
+
 1. **Prepare application**:
+
    ```bash
    # On development machine
    tar --exclude='node_modules' --exclude='.next' --exclude='.git' --exclude='shipsmindweb' -czf deployment.tar.gz .
@@ -221,6 +235,7 @@ curl -I http://localhost:3005
    ```
 
 2. **Deploy on server**:
+
    ```bash
    # Extract and install
    cd ~/shipsmind-speckit
@@ -233,6 +248,7 @@ curl -I http://localhost:3005
    ```
 
 3. **Verify deployment**:
+
    ```bash
    # Test local app
    curl -I http://localhost:3005
@@ -249,21 +265,26 @@ curl -I http://localhost:3005
 ### Common Issues and Solutions
 
 #### 1. TypeScript Build Errors
+
 **Problem**: Unused imports causing build failures
+
 ```bash
 # Error: 'Clock' is declared but its value is never read
 ```
 
 **Solution**: Remove unused imports
+
 ```bash
 # Fix in components (example)
 sed -i 's/ArrowRight, CheckCircle, Clock, TrendingUp/ArrowRight, CheckCircle/g' components/homepage/SolutionsOverview.tsx
 ```
 
 #### 2. 502 Bad Gateway Errors
+
 **Problem**: nginx can't connect to Next.js app
 
 **Diagnosis**:
+
 ```bash
 # Check if app is running
 ps aux | grep next
@@ -274,14 +295,17 @@ sudo nginx -t
 ```
 
 **Solutions**:
+
 - Use `127.0.0.1:3005` instead of `localhost:3005` in nginx config
 - Restart Next.js app if not responding
 - Check for port conflicts
 
 #### 3. Conflicting nginx Configurations
+
 **Problem**: Multiple nginx configs serving different content
 
 **Diagnosis**:
+
 ```bash
 # Find conflicting configs
 sudo find /etc/nginx -name "*.conf" -exec grep -l "shipsmind.com" {} \;
@@ -292,6 +316,7 @@ sudo nginx -t
 ```
 
 **Solution**: Remove conflicting configs
+
 ```bash
 # Remove old configs in conf.d
 sudo rm /etc/nginx/conf.d/shipsmind.conf
@@ -300,9 +325,11 @@ sudo systemctl restart nginx
 ```
 
 #### 4. Database Connection Issues
+
 **Problem**: `Can't reach database server at localhost:5433`
 
 **Solutions**:
+
 - Ensure DATABASE_URL uses correct port (5432 for production)
 - Use `.env` file instead of `.env.local` for Prisma
 - Verify Docker container is running:
@@ -311,9 +338,11 @@ sudo systemctl restart nginx
   ```
 
 #### 5. Cloudflare Caching Issues
+
 **Problem**: Old content still served despite updates
 
 **Solutions**:
+
 - Purge Cloudflare cache in dashboard
 - Wait 5-10 minutes for global propagation
 - Test with cache bypass headers:
@@ -346,17 +375,20 @@ curl -I https://shipsmind.com
 ## Monitoring and Maintenance
 
 ### Log Locations
+
 - **Application**: `~/shipsmind-speckit/app.log`
 - **nginx**: `/var/log/nginx/access.log`, `/var/log/nginx/error.log`
 - **Docker**: `docker logs shipsmind-postgres`
 
 ### Regular Maintenance
+
 - **Weekly**: Check application logs for errors
 - **Monthly**: Update dependencies if needed
 - **Quarterly**: Review and rotate secrets
 - **Backup**: Database and configuration files
 
 ### Performance Monitoring
+
 ```bash
 # Server resources
 htop

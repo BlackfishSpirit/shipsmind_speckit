@@ -7,12 +7,9 @@ import subprocess
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['TERM'] = 'dumb'
 
-# Path to the specify executable
-specify_path = r"C:/Users/Michael/AppData/Roaming/Python/Python313/Scripts/specify.exe"
-
 try:
-    # Run the specify command with all arguments passed through
-    result = subprocess.run([sys.executable, "-m", "specify"] + sys.argv[1:],
+    # Run the specify command as a module with all arguments passed through
+    result = subprocess.run([sys.executable, '-m', 'specify'] + sys.argv[1:],
                           capture_output=False,
                           text=True,
                           encoding='utf-8')

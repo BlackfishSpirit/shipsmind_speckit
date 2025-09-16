@@ -2,8 +2,8 @@ export interface WorkflowTask {
   id: string;
   title: string;
   description: string;
-  category: 'setup' | 'development' | 'review' | 'deployment';
-  priority: 'high' | 'medium' | 'low';
+  category: "setup" | "development" | "review" | "deployment";
+  priority: "high" | "medium" | "low";
   estimatedTime: string;
   completed: boolean;
   completedAt?: string;
