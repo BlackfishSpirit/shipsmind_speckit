@@ -12,8 +12,8 @@ specify_path = r"C:/Users/Michael/AppData/Roaming/Python/Python313/Scripts/speci
 
 try:
     # Run the specify command with all arguments passed through
-    result = subprocess.run([sys.executable, specify_path] + sys.argv[1:], 
-                          capture_output=False, 
+    result = subprocess.run([sys.executable, "-m", "specify"] + sys.argv[1:],
+                          capture_output=False,
                           text=True,
                           encoding='utf-8')
     sys.exit(result.returncode)

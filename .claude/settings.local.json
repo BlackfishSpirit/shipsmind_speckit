@@ -25,7 +25,15 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(pnpm list:*)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx playwright show-report:*)",
+      "Bash(findstr:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(netstat -an:*)",
+      "Bash(dir tests\\screenshots:*)",
+      "Bash(dir .\\tests\\screenshots:*)"
     ],
     "deny": [],
     "ask": []
