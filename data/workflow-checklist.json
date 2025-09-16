@@ -73,7 +73,9 @@
           "priority": "medium",
           "estimatedTime": "3 min",
           "completed": false,
-          "commands": ["pip install git+https://github.com/github/spec-kit.git"],
+          "commands": [
+            "pip install git+https://github.com/github/spec-kit.git"
+          ],
           "documentation": "/TEAM_SETUP.md#specify-cli-setup"
         },
         {
@@ -233,10 +235,7 @@
           "estimatedTime": "2 min",
           "completed": false,
           "dependencies": ["setup-cloudflared-path"],
-          "commands": [
-            "cloudflared tunnel login",
-            "cloudflared tunnel list"
-          ]
+          "commands": ["cloudflared tunnel login", "cloudflared tunnel list"]
         },
         {
           "id": "create-ssh-config",
@@ -303,7 +302,9 @@
           "priority": "high",
           "estimatedTime": "10 min",
           "completed": false,
-          "commands": ["python specify_wrapper.py specify \"Your feature description\""],
+          "commands": [
+            "python specify_wrapper.py specify \"Your feature description\""
+          ],
           "documentation": "/TEAM_SETUP.md#spec-driven-development-process"
         },
         {
@@ -391,7 +392,11 @@
           "priority": "high",
           "estimatedTime": "15-30 min",
           "completed": false,
-          "dependencies": ["pragmatic-code-review", "design-review", "security-review"]
+          "dependencies": [
+            "pragmatic-code-review",
+            "design-review",
+            "security-review"
+          ]
         }
       ]
     },
@@ -509,7 +514,9 @@
           "estimatedTime": "5 min",
           "completed": false,
           "dependencies": ["push-branch"],
-          "commands": ["gh pr create --title \"Your PR title\" --body \"Description\""],
+          "commands": [
+            "gh pr create --title \"Your PR title\" --body \"Description\""
+          ],
           "documentation": "/.github/workflows/claude-code-review.yml"
         }
       ]

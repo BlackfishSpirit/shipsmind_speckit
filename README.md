@@ -5,6 +5,7 @@
 **Welcome! Get up and running in 60 seconds:**
 
 ### **Windows:**
+
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
@@ -15,6 +16,7 @@ cd shipsmind_speckit
 ```
 
 ### **macOS/Linux:**
+
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
@@ -25,6 +27,7 @@ cd shipsmind_speckit
 ```
 
 **The script will automatically:**
+
 - ✅ Install all dependencies
 - ✅ Start the development server
 - ✅ Open your **interactive workflow checklist** at http://localhost:3000/dev/workflow
@@ -38,6 +41,7 @@ After running the quick-start script, you'll have access to our **guided workflo
 **📋 http://localhost:3000/dev/workflow**
 
 This interactive checklist guides you through:
+
 - **🚀 Environment Setup** - Dependencies, database, Docker
 - **🤖 MCP Server Setup** - AI enhancement tools (Playwright, Context7, GitHub, shadcn)
 - **🌐 Remote SSH Development** - Secure remote access via Cloudflare tunnel
@@ -46,6 +50,7 @@ This interactive checklist guides you through:
 - **📝 Git Workflow** - Commits, PRs, and automated reviews
 
 **Key Features:**
+
 - ✅ **Progress tracking** - Your progress is saved locally
 - ✅ **Step-by-step guidance** - Color-coded tasks with time estimates
 - ✅ **Copy-paste commands** - One-click command copying
@@ -56,12 +61,12 @@ This interactive checklist guides you through:
 
 ## 📚 **Documentation**
 
-| Document | Purpose |
-|----------|---------|
-| **[TEAM_SETUP.md](./TEAM_SETUP.md)** | Complete team setup and development guide |
-| **[PROJECT_SPECIFICATION.md](./PROJECT_SPECIFICATION.md)** | Project goals and requirements |
-| **[TECHNICAL_PLAN.md](./TECHNICAL_PLAN.md)** | Technical architecture and implementation |
-| **[PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md)** | Deployment guide and troubleshooting |
+| Document                                                   | Purpose                                   |
+| ---------------------------------------------------------- | ----------------------------------------- |
+| **[TEAM_SETUP.md](./TEAM_SETUP.md)**                       | Complete team setup and development guide |
+| **[PROJECT_SPECIFICATION.md](./PROJECT_SPECIFICATION.md)** | Project goals and requirements            |
+| **[TECHNICAL_PLAN.md](./TECHNICAL_PLAN.md)**               | Technical architecture and implementation |
+| **[PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md)** | Deployment guide and troubleshooting      |
 
 ---
 
@@ -97,12 +102,14 @@ This project uses cutting-edge AI tools for enhanced productivity:
 If you need more control than the quick-start script:
 
 ### **1. Prerequisites**
+
 - Node.js 18.17.0+
 - pnpm 8.0.0+
 - Docker (for development database)
 - Git
 
 ### **2. Manual Setup**
+
 ```bash
 # Install dependencies
 pnpm install
@@ -122,6 +129,7 @@ pnpm dev
 ```
 
 ### **3. Access the Application**
+
 - **Website**: http://localhost:3000
 - **Workflow Checklist**: http://localhost:3000/dev/workflow
 - **Database Studio**: `pnpm db:studio`

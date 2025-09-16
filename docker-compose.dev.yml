@@ -18,7 +18,10 @@ services:
       - speckit-network
     healthcheck:
       test:
-        ["CMD-SHELL", "pg_isready -U speckit_user -d shipsmind_speckit_development"]
+        [
+          "CMD-SHELL",
+          "pg_isready -U speckit_user -d shipsmind_speckit_development",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

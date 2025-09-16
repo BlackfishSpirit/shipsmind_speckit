@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!name || !email) {
       return NextResponse.json(
-        { error: 'Name and email are required' },
+        { error: "Name and email are required" },
         { status: 400 }
       );
     }
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        { error: "Invalid email format" },
         { status: 400 }
       );
     }
@@ -28,46 +28,45 @@ export async function POST(request: NextRequest) {
     // - AWS SES
     // - Nodemailer with SMTP
     // - Resend
-    console.log('Contact form submission:', {
+    console.log("Contact form submission:", {
       name,
       email,
       message,
       timestamp: new Date().toISOString(),
-      to: 'admin@shipsmind.com'
+      to: "admin@shipsmind.com",
     });
 
     // Simulate email sending (replace with actual email service)
     const emailData = {
-      to: 'admin@shipsmind.com',
-      from: 'noreply@shipsmind.com',
+      to: "admin@shipsmind.com",
+      from: "noreply@shipsmind.com",
       subject: `New Contact Form Submission from ${name}`,
       html: `
         <h2>New Contact Form Submission</h2>
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Message:</strong></p>
-        <p>${message || 'No message provided'}</p>
+        <p>${message || "No message provided"}</p>
         <hr>
         <p><small>Submitted at: ${new Date().toISOString()}</small></p>
-      `
+      `,
     };
 
     // TODO: Replace this with actual email sending service
     // Example with SendGrid:
     // await sgMail.send(emailData);
-    
+
     // For development, we'll just log and return success
-    console.log('Email would be sent:', emailData);
+    console.log("Email would be sent:", emailData);
 
     return NextResponse.json(
-      { message: 'Contact form submitted successfully' },
+      { message: "Contact form submitted successfully" },
       { status: 200 }
     );
-
   } catch (error) {
-    console.error('Contact form error:', error);
+    console.error("Contact form error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

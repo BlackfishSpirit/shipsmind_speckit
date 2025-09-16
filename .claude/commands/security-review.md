@@ -35,6 +35,7 @@ OBJECTIVE:
 Perform a security-focused code review to identify HIGH-CONFIDENCE security vulnerabilities that could have real exploitation potential. This is not a general code review - focus ONLY on security implications newly added by this PR. Do not comment on existing security concerns.
 
 CRITICAL INSTRUCTIONS:
+
 1. MINIMIZE FALSE POSITIVES: Only flag issues where you're >80% confident of actual exploitability
 2. AVOID NOISE: Skip theoretical issues, style concerns, or low-impact findings
 3. FOCUS ON IMPACT: Prioritize vulnerabilities that could lead to unauthorized access, data breaches, or system compromise
@@ -46,6 +47,7 @@ CRITICAL INSTRUCTIONS:
 SECURITY CATEGORIES TO EXAMINE:
 
 **Input Validation Vulnerabilities:**
+
 - SQL injection via unsanitized user input
 - Command injection in system calls or subprocesses
 - XXE injection in XML parsing
@@ -54,6 +56,7 @@ SECURITY CATEGORIES TO EXAMINE:
 - Path traversal in file operations
 
 **Authentication & Authorization Issues:**
+
 - Authentication bypass logic
 - Privilege escalation paths
 - Session management flaws
@@ -61,6 +64,7 @@ SECURITY CATEGORIES TO EXAMINE:
 - Authorization logic bypasses
 
 **Crypto & Secrets Management:**
+
 - Hardcoded API keys, passwords, or tokens
 - Weak cryptographic algorithms or implementations
 - Improper key storage or management
@@ -68,6 +72,7 @@ SECURITY CATEGORIES TO EXAMINE:
 - Certificate validation bypasses
 
 **Injection & Code Execution:**
+
 - Remote code execution via deseralization
 - Pickle injection in Python
 - YAML deserialization vulnerabilities
@@ -75,29 +80,34 @@ SECURITY CATEGORIES TO EXAMINE:
 - XSS vulnerabilities in web applications (reflected, stored, DOM-based)
 
 **Data Exposure:**
+
 - Sensitive data logging or storage
 - PII handling violations
 - API endpoint data leakage
 - Debug information exposure
 
 Additional notes:
+
 - Even if something is only exploitable from the local network, it can still be a HIGH severity issue
 
 ANALYSIS METHODOLOGY:
 
 Phase 1 - Repository Context Research (Use file search tools):
+
 - Identify existing security frameworks and libraries in use
 - Look for established secure coding patterns in the codebase
 - Examine existing sanitization and validation patterns
 - Understand the project's security model and threat model
 
 Phase 2 - Comparative Analysis:
+
 - Compare new code changes against existing security patterns
 - Identify deviations from established secure practices
 - Look for inconsistent security implementations
 - Flag code that introduces new attack surfaces
 
 Phase 3 - Vulnerability Assessment:
+
 - Examine each modified file for security implications
 - Trace data flow from user inputs to sensitive operations
 - Look for privilege boundaries being crossed unsafely
@@ -111,17 +121,19 @@ For example:
 
 # Vuln 1: XSS: `foo.py:42`
 
-* Severity: High
-* Description: User input from `username` parameter is directly interpolated into HTML without escaping, allowing reflected XSS attacks
-* Exploit Scenario: Attacker crafts URL like /bar?q=<script>alert(document.cookie)</script> to execute JavaScript in victim's browser, enabling session hijacking or data theft
-* Recommendation: Use Flask's escape() function or Jinja2 templates with auto-escaping enabled for all user inputs rendered in HTML
+- Severity: High
+- Description: User input from `username` parameter is directly interpolated into HTML without escaping, allowing reflected XSS attacks
+- Exploit Scenario: Attacker crafts URL like /bar?q=<script>alert(document.cookie)</script> to execute JavaScript in victim's browser, enabling session hijacking or data theft
+- Recommendation: Use Flask's escape() function or Jinja2 templates with auto-escaping enabled for all user inputs rendered in HTML
 
 SEVERITY GUIDELINES:
+
 - **HIGH**: Directly exploitable vulnerabilities leading to RCE, data breach, or authentication bypass
 - **MEDIUM**: Vulnerabilities requiring specific conditions but with significant impact
 - **LOW**: Defense-in-depth issues or lower-impact vulnerabilities
 
 CONFIDENCE SCORING:
+
 - 0.9-1.0: Certain exploit path identified, tested if possible
 - 0.8-0.9: Clear vulnerability pattern with known exploitation methods
 - 0.7-0.8: Suspicious pattern requiring specific conditions to exploit
@@ -131,7 +143,9 @@ FINAL REMINDER:
 Focus on HIGH and MEDIUM findings only. Better to miss some theoretical issues than flood the report with false positives. Each finding should be something a security engineer would confidently raise in a PR review.
 
 ## Project Security Context
+
 This is a Next.js 14 TypeScript project using:
+
 - **Framework**: Next.js 14 with App Router
 - **Database**: PostgreSQL with Prisma ORM (handles SQL injection prevention)
 - **Authentication**: Clerk (handles auth/session management)

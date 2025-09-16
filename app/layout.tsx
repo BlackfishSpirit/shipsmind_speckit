@@ -8,8 +8,10 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "AI Automation Solutions for Small Business | ShipsMind",
-  description: "Save 10+ hours per week and increase revenue through smart AI automation. Specialized solutions for retail, legal, accounting, and skilled trades.",
-  keywords: "AI automation, small business, SMB, process automation, workflow optimization",
+  description:
+    "Save 10+ hours per week and increase revenue through smart AI automation. Specialized solutions for retail, legal, accounting, and skilled trades.",
+  keywords:
+    "AI automation, small business, SMB, process automation, workflow optimization",
 };
 
 export default function RootLayout({
