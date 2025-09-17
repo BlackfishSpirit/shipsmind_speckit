@@ -2,7 +2,7 @@
 
 ## ⚡ **Quick Start for New Team Members**
 
-**Welcome! Get up and running in 60 seconds:**
+**Welcome! Get up and running in 75 seconds:**
 
 ### **Windows:**
 
