@@ -94,6 +94,9 @@ class FeatureManager:
         # Create feature documentation
         self._create_feature_doc(feature)
 
+        # Display branch creation suggestion
+        self._suggest_branch_creation(feature)
+
         print(f"✅ Created feature: {feature_id} - {name}")
         return feature_id
 
@@ -128,6 +131,21 @@ class FeatureManager:
             f.write(doc)
 
         print(f"📄 Created documentation: {doc_path}")
+
+    def _suggest_branch_creation(self, feature):
+        """Suggest git branch creation commands"""
+        safe_name = re.sub(r'[^\w\s-]', '', feature['name']).strip()
+        safe_name = re.sub(r'[-\s]+', '-', safe_name).lower()
+
+        linear_branch = f"feature/{feature.get('linearIssue', feature['id'])}-{safe_name}"
+        standard_branch = f"feature/{feature['id']}-{safe_name}"
+
+        print(f"\n🌿 Suggested branch creation:")
+        if feature.get('linearIssue'):
+            print(f"git checkout -b {linear_branch}")
+        else:
+            print(f"git checkout -b {standard_branch}")
+        print()
 
     def move_feature(self, feature_id, new_status):
         """Move feature to different status"""

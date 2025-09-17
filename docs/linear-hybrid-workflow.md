@@ -84,16 +84,26 @@ Ask Claude:
 ```
 
 ### Starting Work on a Feature
-1. **Update Linear Status**
+1. **Create Feature Branch**
+   ```bash
+   # Create and switch to feature branch
+   git checkout -b feature/lin-123-user-authentication
+
+   # Or using Linear issue naming convention
+   git checkout -b feature/LIN-123-add-user-auth
+   ```
+
+2. **Update Linear Status**
    - Ask Claude: `"Update Linear issue LIN-123 to In Progress"`
 
-2. **Review Technical Spec**
+3. **Review Technical Spec**
    - Check generated documentation in `docs/features/`
    - Review GitHub Spec Kit output for implementation guidance
 
-3. **Implement with Claude Code**
+4. **Implement with Claude Code**
    - Use generated architecture and task breakdown
    - Reference Linear issue for context and requirements
+   - Make commits with Linear issue references
 
 ### Progress Updates
 Ask Claude:
@@ -103,18 +113,54 @@ Ask Claude:
 ```
 
 ### Code Review Ready
-Ask Claude:
-```
-"Update Linear issue LIN-123 status to In Review and add comment:
-'Feature implementation complete. Ready for code review.'"
-```
+1. **Push Feature Branch**
+   ```bash
+   # Push feature branch to remote
+   git push -u origin feature/LIN-123-add-user-auth
+   ```
+
+2. **Create Pull Request**
+   ```bash
+   # Create PR with Linear issue reference
+   gh pr create --title "Add user authentication (LIN-123)" --body "$(cat <<'EOF'
+   ## Summary
+   Implements user authentication with email/password login.
+
+   ## Changes
+   - Add JWT-based authentication API
+   - Create login/logout components
+   - Add user session management
+
+   ## Linear Issue
+   Closes LIN-123
+
+   ## Test Plan
+   - [ ] Test login with valid credentials
+   - [ ] Test login with invalid credentials
+   - [ ] Test logout functionality
+   - [ ] Verify JWT token expiration
+   EOF
+   )"
+   ```
+
+3. **Update Linear Status**
+   Ask Claude:
+   ```
+   "Update Linear issue LIN-123 status to In Review and add comment:
+   'Feature implementation complete. PR created for code review.'"
+   ```
 
 ### Deployment Ready
-Ask Claude:
-```
-"Update Linear issue LIN-123 status to Done and add comment:
-'Feature tested and deployed to production.'"
-```
+1. **Merge Pull Request**
+   - After code review approval, merge PR
+   - Delete feature branch: `git branch -d feature/LIN-123-add-user-auth`
+
+2. **Update Linear Status**
+   Ask Claude:
+   ```
+   "Update Linear issue LIN-123 status to Done and add comment:
+   'Feature merged to main and deployed to production.'"
+   ```
 
 ## Integration Points
 

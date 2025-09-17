@@ -66,24 +66,37 @@ docs/features/
 pnpm features:move feat-001 planning
 ```
 
-### 2. Planning → Active
+### 2. Planning → Active (Start Development)
 ```bash
+# Move feature to active status
 pnpm features:move feat-001 active
+
+# Create feature branch (suggested command will be displayed)
+git checkout -b feature/feat-001-user-authentication
 ```
 
-### 3. Active → Review
+### 3. Active → Review (Code Review)
 ```bash
+# Push feature branch and create PR
+git push -u origin feature/feat-001-user-authentication
+gh pr create --title "Add user authentication (feat-001)" --body "Implements user authentication feature"
+
+# Move to review status
 pnpm features:move feat-001 review
 ```
 
-### 4. Review → Testing
+### 4. Review → Testing (Testing Phase)
 ```bash
 pnpm features:move feat-001 testing
 ```
 
-### 5. Testing → Complete
+### 5. Testing → Complete (Deployment)
 ```bash
+# After merging PR and deployment
 pnpm features:move feat-001 complete
+
+# Clean up feature branch
+git branch -d feature/feat-001-user-authentication
 ```
 
 ## Spec-Driven Feature Development
