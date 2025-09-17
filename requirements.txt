@@ -1,0 +1,2 @@
+# Python dependencies for GitHub Spec Kit integration
+git+https://github.com/github/spec-kit.git

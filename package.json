@@ -20,7 +20,15 @@
     "docker:down": "docker-compose -f docker-compose.dev.yml down",
     "docker:logs": "docker-compose -f docker-compose.dev.yml logs -f",
     "setup": "pnpm install && pnpm db:generate",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "specify": "python scripts/specify.py",
+    "specify:init": "python scripts/specify.py init",
+    "specify:check": "python scripts/specify.py check",
+    "features:list": "python .feature-tracking/scripts/feature-manager.py list",
+    "features:create": "python .feature-tracking/scripts/feature-manager.py create",
+    "features:move": "python .feature-tracking/scripts/feature-manager.py move",
+    "features:metrics": "python .feature-tracking/scripts/feature-manager.py metrics",
+    "features:spec": "python .feature-tracking/scripts/spec-kit-integration.py create-from-spec"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.7.4",

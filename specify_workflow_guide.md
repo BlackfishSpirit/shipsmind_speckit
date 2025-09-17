@@ -31,23 +31,26 @@ During our installation on Windows, we discovered that the Specify CLI has Unico
 **Problem:** CLI crashed with `UnicodeEncodeError` when displaying banner
 **Solution:** Created a wrapper script that handles encoding properly
 
-### Our Solution: specify_wrapper.py
+### ✅ Now Solved with Project Integration
 
-```python
-#!/usr/bin/env python
-import os
-import sys
-import subprocess
+**GitHub Spec Kit is now fully integrated into the project!** All the Unicode and wrapper script issues have been resolved.
 
-# Set environment variables to handle Unicode better
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-os.environ['TERM'] = 'dumb'
+**For this project, simply use:**
 
-# Path to the specify executable
-specify_path = r"C:/Users/Michael/AppData/Roaming/Python/Python313/Scripts/specify.exe"
+```bash
+# Check if GitHub Spec Kit is working
+pnpm specify:check
 
-try:
-    # Run the specify command with all arguments passed through
+# Initialize spec-driven development
+pnpm specify:init
+
+# Run any specify command
+pnpm specify -- <command>
+```
+
+### Legacy Solution (for reference only)
+
+The previous manual installation required a wrapper script to handle Windows Unicode issues:
     result = subprocess.run([sys.executable, specify_path] + sys.argv[1:],
                           capture_output=False,
                           text=True,
@@ -364,7 +367,7 @@ pip install git+https://github.com/github/spec-kit.git
 # Copy specify_wrapper.py to your project
 
 # 3. Verify installation
-python specify_wrapper.py check
+pnpm specify:check
 ```
 
 Expected output:
@@ -384,7 +387,7 @@ Specify CLI is ready to use!
 
 ```bash
 # Initialize new project
-python specify_wrapper.py init my_website
+pnpm specify:init
 
 # Or manually create .specify directory structure:
 mkdir -p .specify/{memory,scripts,templates}

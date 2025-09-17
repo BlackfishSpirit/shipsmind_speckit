@@ -1,62 +1,47 @@
-# Specify CLI Installation Guide for Windows
+# GitHub Spec Kit - Project Integration
 
-This document outlines the steps to install and configure the GitHub Spec Kit CLI on Windows systems.
+**🎉 GitHub Spec Kit is now fully integrated into this project!**
 
-## Prerequisites
+This document is for reference only - new team members don't need to manually install GitHub Spec Kit.
+
+## For This Project (Recommended)
+
+GitHub Spec Kit is automatically installed with project dependencies and accessible via npm scripts:
+
+```bash
+# Install project dependencies (includes GitHub Spec Kit)
+pnpm install
+
+# Verify GitHub Spec Kit is working
+pnpm specify:check
+
+# Initialize spec-driven development
+pnpm specify:init
+
+# Run any specify command
+pnpm specify -- <command>
+```
+
+## Manual Installation (Not Required for This Project)
+
+If you need GitHub Spec Kit for other projects:
+
+### Prerequisites
 
 - Python 3.11+ (tested with Python 3.13)
 - Git
 - An AI coding agent (Claude Code, GitHub Copilot, etc.)
 
-## Installation Steps
-
-### 1. Install Python Dependencies
+### Installation Steps
 
 ```bash
-pip install uv
 pip install git+https://github.com/github/spec-kit.git
 ```
 
-### 2. Fix Windows Unicode Issues
-
-The Specify CLI uses Unicode characters that don't display properly in Windows console. Create a wrapper script to handle this:
-
-**File: `specify_wrapper.py`**
-
-```python
-#!/usr/bin/env python
-import os
-import sys
-import subprocess
-
-# Set environment variables to handle Unicode better
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-os.environ['TERM'] = 'dumb'
-
-# Path to the specify executable
-specify_path = r"C:/Users/Michael/AppData/Roaming/Python/Python313/Scripts/specify.exe"
-
-try:
-    # Run the specify command with all arguments passed through
-    result = subprocess.run([sys.executable, specify_path] + sys.argv[1:],
-                          capture_output=False,
-                          text=True,
-                          encoding='utf-8')
-    sys.exit(result.returncode)
-except FileNotFoundError:
-    print("Error: specify.exe not found. Make sure it's installed.")
-    sys.exit(1)
-except Exception as e:
-    print(f"Error running specify: {e}")
-    sys.exit(1)
-```
-
-> **Note:** Update the `specify_path` variable to match your Python Scripts directory path.
-
-### 3. Verify Installation
+### Verify Manual Installation
 
 ```bash
-python specify_wrapper.py check
+python -m specify check
 ```
 
 Expected output:

@@ -79,6 +79,7 @@ claude mcp list
 ✓ context7: Up-to-date documentation - Connected
 ✓ github: GitHub repository integration - Connected
 ✓ shadcn: shadcn/ui component library - Connected
+✓ linear: Linear project management - Connected
 ```
 
 ### **Optional Commands (as needed)**
@@ -176,16 +177,12 @@ This project includes advanced AI agents for code review, design review, and sec
 
 ### **Specify CLI Setup**
 
-**Install Specify CLI**:
-
-```bash
-pip install git+https://github.com/github/spec-kit.git
-```
+**GitHub Spec Kit is pre-integrated** - no manual installation needed! It's automatically installed with project dependencies.
 
 **Verify installation**:
 
 ```bash
-python specify_wrapper.py check
+pnpm specify:check
 ```
 
 **Expected output**:
@@ -197,27 +194,46 @@ python specify_wrapper.py check
 Specify CLI is ready to use!
 ```
 
+**Available Commands**:
+
+```bash
+# Check development environment
+pnpm specify:check
+
+# Initialize spec-driven development
+pnpm specify:init
+
+# General specify commands
+pnpm specify -- <command>
+```
+
 ### **Using Specify for Feature Development**
 
-**1. Create a Specification** (Describe WHAT, not HOW):
+**1. Initialize Spec-Driven Development**:
 
 ```bash
-python specify_wrapper.py specify "Add user authentication with email/password login"
+pnpm specify:init
 ```
 
-**2. Generate Technical Plan**:
+**2. Create a Specification** (Describe WHAT, not HOW):
 
 ```bash
-python specify_wrapper.py plan
+pnpm specify -- specify "Add user authentication with email/password login"
 ```
 
-**3. Break into Tasks**:
+**3. Generate Technical Plan**:
 
 ```bash
-python specify_wrapper.py tasks
+pnpm specify -- plan
 ```
 
-**4. Implement with Claude Code**:
+**4. Break into Tasks**:
+
+```bash
+pnpm specify -- tasks
+```
+
+**5. Implement with Claude Code**:
 
 - Use Claude Code in VS Code
 - Reference the generated plan and tasks
@@ -420,7 +436,7 @@ Automated code review on every pull request via `.github/workflows/claude-code-r
 
 ```bash
 # Example: Adding a new feature
-python specify_wrapper.py specify "Add a client testimonials section with star ratings and filtering by industry"
+pnpm specify -- specify "Add a client testimonials section with star ratings and filtering by industry"
 ```
 
 **2. Use Claude Code Integration**
@@ -468,8 +484,10 @@ pnpm build
 | `PROJECT_SPECIFICATION.md`  | Overall project goals and requirements        |
 | `TECHNICAL_PLAN.md`         | Technical architecture and implementation     |
 | `PRODUCTION_DEPLOYMENT.md`  | Complete deployment guide and troubleshooting |
+| `docs/feature-tracking-guide.md` | Feature tracking system documentation    |
+| `docs/linear-hybrid-workflow.md` | Linear + GitHub Spec Kit workflow        |
+| `docs/linear-migration-plan.md`  | Migration plan to Linear MCP             |
 | `specify_workflow_guide.md` | Detailed Specify CLI usage                    |
-| `specifyinstall.md`         | Specify installation instructions             |
 
 ---
 
@@ -704,7 +722,15 @@ You're now set up for rapid AI-assisted development with:
 **Start building your first feature**:
 
 ```bash
-python specify_wrapper.py specify "Your feature description here"
+# Option 1: Start with Linear (Recommended)
+# Ask Claude: "Create a Linear issue for user dashboard feature"
+
+# Option 2: Start with GitHub Spec Kit
+pnpm specify:init
+pnpm features:spec "Your feature description here"
+
+# Option 3: View feature tracking dashboard
+# Visit: http://localhost:3000/dev/features
 ```
 
 **Happy coding!** 🎉
