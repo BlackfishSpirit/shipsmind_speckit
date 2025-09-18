@@ -212,19 +212,38 @@ After completing setup, verify the following:
 
 ## Step 10: Test the Setup
 
-1. **Create Test Issue**
-   - Create a test issue in Linear
-   - Assign labels and set status
-   - Verify workflow transitions work
+1. **Test GitHub Integration with Existing Issue**
 
-2. **Test GitHub Integration**
-   - Create a branch: `feature/lin-test-integration`
-   - Make a commit with message: `Test GitHub integration - Refs LIN-XXX`
-   - Verify the commit appears in Linear issue
+   **Use Issue:** PRD-1 (Test issue) - currently available in your workspace
+
+   **Create test branch and commit:**
+   ```bash
+   # Navigate to your project
+   cd E:\ClaudeCode\shipsmind_speckit
+
+   # Create test branch
+   git checkout -b feature/prd-1-test-integration
+
+   # Make a small change
+   echo "// Testing Linear integration with PRD-1" >> test-integration.md
+
+   # Commit with Linear issue reference
+   git add .
+   git commit -m "Test GitHub integration - Refs PRD-1"
+
+   # Push to GitHub
+   git push origin feature/prd-1-test-integration
+   ```
+
+2. **Verify Integration Works**
+   - **In Linear:** Go to issue PRD-1
+   - **Look for:** Commit should appear in the issue timeline/activity
+   - **Wait:** Allow 5-10 minutes for sync
+   - **Expected:** You should see the commit "Test GitHub integration - Refs PRD-1" linked to the issue
 
 3. **Test Claude MCP Integration**
-   - Ask Claude: "Show me my Linear issues"
-   - Ask Claude: "Create a test Linear issue"
+   - Ask Claude: "Show me Linear issue PRD-1"
+   - Ask Claude: "Add a comment to PRD-1 saying GitHub integration test completed"
    - Verify Claude can interact with the configured workspace
 
 ## Next Steps
