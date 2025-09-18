@@ -8,15 +8,31 @@
       "icon": "⚙️",
       "tasks": [
         {
+          "id": "sync-repository",
+          "title": "Sync Repository",
+          "description": "Sync your local repository with latest remote changes (team collaboration)",
+          "category": "setup",
+          "priority": "high",
+          "estimatedTime": "1 min",
+          "completed": false,
+          "commands": [
+            "git status",
+            "git pull origin main"
+          ],
+          "documentation": "/TEAM_SETUP.md#team-collaboration-sync",
+          "note": "Run this daily to stay in sync with team changes"
+        },
+        {
           "id": "clone-repo",
           "title": "Clone Repository",
-          "description": "Clone the shipsmind_speckit repository to your local machine",
+          "description": "Clone the shipsmind_speckit repository to your local machine (first time only)",
           "category": "setup",
           "priority": "high",
           "estimatedTime": "2 min",
           "completed": false,
           "commands": ["git clone <repository-url>", "cd shipsmind_speckit"],
-          "documentation": "/README.md"
+          "documentation": "/README.md",
+          "note": "Skip if repository already cloned"
         },
         {
           "id": "install-dependencies",
@@ -26,7 +42,7 @@
           "priority": "high",
           "estimatedTime": "3 min",
           "completed": false,
-          "dependencies": ["clone-repo"],
+          "dependencies": ["sync-repository"],
           "commands": ["pnpm install"],
           "autoDetectable": true
         },
@@ -38,7 +54,7 @@
           "priority": "high",
           "estimatedTime": "2 min",
           "completed": false,
-          "dependencies": ["clone-repo"],
+          "dependencies": ["sync-repository"],
           "commands": ["cp .env.example .env.local"],
           "documentation": "/TEAM_SETUP.md#environment-setup"
         },

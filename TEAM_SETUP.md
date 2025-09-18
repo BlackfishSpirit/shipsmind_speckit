@@ -4,7 +4,76 @@
 
 Welcome to the ShipsMind project! This guide will get you up and running with our development workflow using **Specify + Claude Code** for rapid AI-assisted development.
 
-## 🎯 **Start Here: Interactive Workflow Checklist**
+## 🎯 **Daily Startup Commands (Start Here!)**
+
+When opening this project in VSCode, run these commands to get everything ready:
+
+### **Required Startup Commands**
+
+```bash
+# 1. Sync with remote repository (important for team collaboration)
+git pull origin main
+
+# 2. Start the development server (most important)
+pnpm dev
+
+# 3. Verify Claude Code MCP servers are connected
+claude mcp list
+```
+
+### **Expected MCP Output**
+
+```
+✓ playwright: Browser automation & testing - Connected
+✓ context7: Up-to-date documentation - Connected
+✓ github: GitHub repository integration - Connected
+✓ shadcn: shadcn/ui component library - Connected
+✓ linear: Linear project management - Connected
+```
+
+### **Optional Commands (as needed)**
+
+```bash
+# If using Docker services for database
+docker-compose up -d
+
+# If database needs setup/reset
+pnpm db:push
+
+# If you need Prisma Studio for database management
+pnpm db:studio
+```
+
+### **Team Collaboration Sync**
+
+```bash
+# Full team sync workflow (recommended daily)
+git status                           # Check current state
+git stash                           # Stash any uncommitted changes (if needed)
+git checkout main                   # Switch to main branch
+git pull origin main               # Get latest changes
+git checkout your-feature-branch   # Return to your feature branch
+git rebase main                     # Apply latest changes to your branch
+git stash pop                       # Restore your uncommitted changes (if stashed)
+
+# Quick sync (if on main branch already)
+git pull origin main               # Get latest changes
+```
+
+### **Quick Health Check**
+
+```bash
+# Verify everything is working
+pnpm dev &
+claude mcp list
+curl http://localhost:3000  # Should return HTML
+```
+
+**Most Important**: The `pnpm dev` command starts your Next.js development server. Your MCP servers automatically connect when you use Claude Code, so no manual activation needed.
+
+---
+
+## 🎯 **Interactive Workflow Checklist**
 
 **📋 http://localhost:3000/dev/workflow**
 
@@ -55,56 +124,6 @@ pnpm dev
 - ✅ **App running**: http://localhost:3000
 - ✅ **Database**: `pnpm db:studio` opens Prisma Studio
 - ✅ **Docker services**: `docker ps` shows 4 containers
-
----
-
-## 🎯 **Daily Startup Commands**
-
-When opening this project in VSCode, run these commands to get everything ready:
-
-### **Required Startup Commands**
-
-```bash
-# 1. Start the development server (most important)
-pnpm dev
-
-# 2. Verify Claude Code MCP servers are connected
-claude mcp list
-```
-
-### **Expected MCP Output**
-
-```
-✓ playwright: Browser automation & testing - Connected
-✓ context7: Up-to-date documentation - Connected
-✓ github: GitHub repository integration - Connected
-✓ shadcn: shadcn/ui component library - Connected
-✓ linear: Linear project management - Connected
-```
-
-### **Optional Commands (as needed)**
-
-```bash
-# If using Docker services for database
-docker-compose up -d
-
-# If database needs setup/reset
-pnpm db:push
-
-# If you need Prisma Studio for database management
-pnpm db:studio
-```
-
-### **Quick Health Check**
-
-```bash
-# Verify everything is working
-pnpm dev &
-claude mcp list
-curl http://localhost:3000  # Should return HTML
-```
-
-**Most Important**: The `pnpm dev` command starts your Next.js development server. Your MCP servers automatically connect when you use Claude Code, so no manual activation needed.
 
 ### **Start with the Task Tracking Dashboard**
 
