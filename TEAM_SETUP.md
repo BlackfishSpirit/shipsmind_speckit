@@ -722,19 +722,50 @@ You're now set up for rapid AI-assisted development with:
 **Start building your first feature**:
 
 ```bash
-# Option 1: Start with Linear (Recommended)
-# Ask Claude: "Create a Linear issue for user dashboard feature"
+# Option 1: Check assigned Linear issues (Recommended)
+# Visit: https://linear.app (your assigned development tasks)
 
-# Option 2: Start with GitHub Spec Kit
+# Option 2: Start with GitHub Spec Kit for new features
 pnpm specify:init
 pnpm features:spec "Your feature description here"
 
-# Option 3: View feature tracking dashboard
+# Option 3: View development workflow checklist
+# Visit: http://localhost:3000/dev/workflow
+
+# Option 4: View feature tracking dashboard
 # Visit: http://localhost:3000/dev/features
 ```
+
+## **🔄 Hybrid Workflow: Linear + Development Guide**
+
+Your development workflow now integrates Linear project management with local development tools:
+
+### **Daily Development Flow:**
+
+1. **Check Linear assignments**: https://linear.app (your tasks)
+2. **Follow setup guide**: http://localhost:3000/dev/workflow (environment)
+3. **Create feature branch**: `git checkout -b feature/[issue-id]-description`
+4. **Develop using workflow**: Follow the step-by-step development checklist
+5. **Commit with Linear linking**: `git commit -m "Feature work - Refs DEV-X"`
+6. **GitHub auto-updates Linear**: Commits appear in Linear issue timeline
+
+### **Integration Benefits:**
+
+- ✅ **Project Management**: Linear handles assignments, priorities, roadmaps
+- ✅ **Development Process**: Workflow pages guide setup, coding, reviews
+- ✅ **Automatic Linking**: Git commits ↔ Linear issues via GitHub integration
+- ✅ **Team Coordination**: Linear for planning, workflow for execution
+- ✅ **Progress Tracking**: Both systems complement each other
+
+### **Quick Links:**
+
+- **Linear Workspace**: https://linear.app
+- **Development Workflow**: http://localhost:3000/dev/workflow
+- **Feature Dashboard**: http://localhost:3000/dev/features
+- **Manual Setup Guide**: /linear_manual_setup.md
 
 **Happy coding!** 🎉
 
 ---
 
-_Last updated: September 15, 2025_
+_Last updated: September 18, 2025_

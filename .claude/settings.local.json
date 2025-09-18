@@ -34,7 +34,10 @@
       "Bash(netstat -an:*)",
       "Bash(dir tests\\screenshots:*)",
       "Bash(dir .\\tests\\screenshots:*)",
-      "WebFetch(domain:linear.app)"
+      "WebFetch(domain:linear.app)",
+      "mcp__linear__create_issue",
+      "mcp__linear__search_issues",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

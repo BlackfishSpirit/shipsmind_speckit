@@ -115,7 +115,25 @@
               "shadcn: shadcn/ui component library - Connected"
             ]
           },
-          "autoDetectable": true
+          "autoDetectable": true,
+          "nextSteps": {
+            "title": "🎉 Setup Complete! Ready for Development",
+            "description": "Your development environment is ready. Check your assigned tasks and start building!",
+            "actions": [
+              {
+                "title": "View Your Linear Issues",
+                "description": "Check assigned development tasks in Linear",
+                "url": "https://linear.app",
+                "type": "external"
+              },
+              {
+                "title": "Visit Feature Dashboard",
+                "description": "View project features and specifications",
+                "url": "/dev/features",
+                "type": "internal"
+              }
+            ]
+          }
         }
       ]
     },
@@ -299,16 +317,28 @@
         {
           "id": "create-specification",
           "title": "Create Feature Specification",
-          "description": "Use Specify CLI to describe what you want to build",
+          "description": "Use Specify CLI to describe what you want to build, or work on an assigned Linear issue",
           "category": "development",
           "priority": "high",
           "estimatedTime": "10 min",
           "completed": false,
           "commands": [
+            "# Option 1: Create new specification",
             "pnpm specify init",
-            "# Or create specifications with: pnpm specify -- specify \"Your feature description\""
+            "pnpm specify -- specify \"Your feature description\"",
+            "",
+            "# Option 2: Work on assigned Linear issue",
+            "# Check your assigned issues: https://linear.app",
+            "# Create branch: git checkout -b feature/[issue-id]-description"
           ],
-          "documentation": "/TEAM_SETUP.md#spec-driven-development-process"
+          "documentation": "/TEAM_SETUP.md#spec-driven-development-process",
+          "relatedLinks": [
+            {
+              "title": "Linear Issues",
+              "url": "https://linear.app",
+              "description": "Check your assigned development tasks"
+            }
+          ]
         },
         {
           "id": "generate-plan",
@@ -488,14 +518,25 @@
         {
           "id": "commit-changes",
           "title": "Commit Changes",
-          "description": "Create a descriptive commit message",
+          "description": "Create a descriptive commit message with Linear issue reference",
           "category": "deployment",
           "priority": "high",
           "estimatedTime": "2 min",
           "completed": false,
           "dependencies": ["stage-changes"],
-          "commands": ["git commit -m \"Your descriptive commit message\""],
-          "documentation": "/PRODUCTION_DEPLOYMENT.md#committing-changes-with-git"
+          "commands": [
+            "# Link to Linear issue (auto-updates issue status):",
+            "git commit -m \"Add feature implementation - Refs DEV-2\"",
+            "",
+            "# Or for general commits:",
+            "git commit -m \"Your descriptive commit message\""
+          ],
+          "documentation": "/PRODUCTION_DEPLOYMENT.md#committing-changes-with-git",
+          "tips": [
+            "Use 'Refs [ISSUE-ID]' to link commits to Linear issues",
+            "Use 'Fixes [ISSUE-ID]' to auto-close Linear issues when PR merges",
+            "GitHub integration will update Linear issue timeline automatically"
+          ]
         },
         {
           "id": "push-branch",
