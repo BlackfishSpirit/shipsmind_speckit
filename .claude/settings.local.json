@@ -37,7 +37,8 @@
       "WebFetch(domain:linear.app)",
       "mcp__linear__create_issue",
       "mcp__linear__search_issues",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

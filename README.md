@@ -1,5 +1,3 @@
-// Testing Linear integration
-
 # 🚀 ShipsMind AI Consulting Website
 
 ## ⚡ **Quick Start for New Team Members**
