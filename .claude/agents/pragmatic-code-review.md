@@ -141,6 +141,21 @@ You will analyze code changes using this prioritized checklist:
 
 You have access to multiple MCP servers to enhance your code review capabilities:
 
+- **Supabase MCP**: Database analysis and backend development guidance
+  - Analyze database schema structure and relationships
+  - Generate optimized SQL queries for data exploration
+  - Understand table constraints and indexing strategies
+  - Review database design patterns and normalization
+  - Validate data modeling and migration strategies
+  - Assess database performance and query optimization
+
+- **Semgrep MCP**: Security vulnerability scanning and analysis
+  - Scan code for security vulnerabilities using 5,000+ rules
+  - Identify authentication and authorization issues
+  - Detect input validation problems and injection vulnerabilities
+  - Find hardcoded secrets and configuration issues
+  - Analyze security anti-patterns and best practices
+
 - **Context7 MCP**: Add "use context7" for up-to-date documentation and best practices
   - Next.js 14 App Router patterns and performance optimizations
   - PostgreSQL/Prisma query optimization and security patterns
@@ -166,9 +181,10 @@ You have access to multiple MCP servers to enhance your code review capabilities
 This is a Next.js 14 TypeScript project using:
 
 - **Framework**: Next.js 14 with App Router
-- **Database**: PostgreSQL with Prisma ORM
+- **Database**: Supabase (PostgreSQL) with potential Prisma ORM integration
 - **Styling**: Tailwind CSS + shadcn/ui
-- **Authentication**: Clerk
+- **Authentication**: Clerk (with Supabase backend integration)
 - **Development**: Docker services, pnpm package manager
+- **Backend**: Supabase for database, auth, and real-time features
 
-Focus your review on ensuring changes align with these technology choices and project patterns.
+Focus your review on ensuring changes align with these technology choices and project patterns. When reviewing backend/database code, leverage the Supabase MCP to understand schema relationships and validate database interactions.

@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
+import CreateFeatureModal from '@/components/features/CreateFeatureModal'
+import Link from 'next/link'
 import {
   PlusCircle,
   Clock,
@@ -15,7 +17,8 @@ import {
   AlertCircle,
   BarChart3,
   Filter,
-  Search
+  Search,
+  Palette
 } from 'lucide-react'
 
 interface Feature {
@@ -157,6 +160,10 @@ export default function FeaturesPage() {
     return Math.round((completed / features.length) * 100)
   }
 
+  const handleFeatureCreated = (newFeature: Feature) => {
+    setFeatures(prev => [...prev, newFeature])
+  }
+
   const FeatureCard = ({ feature }: { feature: Feature }) => (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
@@ -215,10 +222,20 @@ export default function FeaturesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Feature Tracking Dashboard</h1>
-        <p className="text-muted-foreground">
-          Manage and track features across the development lifecycle
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Feature Tracking Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage and track features across the development lifecycle
+            </p>
+          </div>
+          <Button asChild>
+            <Link href="/dev/design">
+              <Palette className="h-4 w-4 mr-2" />
+              Design Workflow
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -344,10 +361,7 @@ export default function FeaturesPage() {
               <option value="testing">Testing</option>
               <option value="complete">Complete</option>
             </select>
-            <Button>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Feature
-            </Button>
+            <CreateFeatureModal onFeatureCreated={handleFeatureCreated} />
           </div>
 
           {/* Features Grid */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   WorkflowData,
   WorkflowSection,
@@ -26,6 +27,8 @@ import {
   ExternalLink,
   Terminal,
   BookOpen,
+  Palette,
+  Target,
 } from "lucide-react";
 
 export default function WorkflowChecklist() {
@@ -202,12 +205,30 @@ export default function WorkflowChecklist() {
   return (
     <div className="container mx-auto max-w-6xl p-6">
       <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold">
-          ShipsMind Development Workflow
-        </h1>
-        <p className="mb-4 text-gray-600">
-          AI-powered development checklist for {username}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="mb-2 text-3xl font-bold">
+              ShipsMind Development Workflow
+            </h1>
+            <p className="mb-4 text-gray-600">
+              AI-powered development checklist for {username}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/dev/features">
+                <Target className="h-4 w-4 mr-2" />
+                Features
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/dev/design">
+                <Palette className="h-4 w-4 mr-2" />
+                Design Workflow
+              </Link>
+            </Button>
+          </div>
+        </div>
         <div className="mb-4">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-medium">Overall Progress</span>

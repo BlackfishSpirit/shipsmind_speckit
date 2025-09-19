@@ -29,6 +29,8 @@ claude mcp list
 ✓ github: GitHub repository integration - Connected
 ✓ shadcn: shadcn/ui component library - Connected
 ✓ linear: Linear project management - Connected
+✓ semgrep: Security vulnerability scanning - Connected
+✓ supabase: Backend database integration - Connected
 ```
 
 ### **Optional Commands (as needed)**
@@ -264,27 +266,26 @@ pnpm specify -- tasks
 
 - **Pragmatic Code Review**: Comprehensive code quality and architecture review (agent + slash command)
 - **Design Review**: UI/UX validation with Playwright browser automation (agent + slash command)
-- **Security Review**: Security vulnerability analysis (slash command)
+- **Security Review**: Security vulnerability analysis with Semgrep integration (slash command)
+- **Feature Documentation**: Automated feature documentation with backend integration
 - **GitHub Actions**: Automated PR reviews with Claude Code integration
 
-**Install Playwright MCP** (Required for design reviews):
-
-```bash
-claude mcp add playwright -- npx @playwright/mcp@latest
-```
-
-**Verify MCP Installation**:
+**Pre-configured MCP Servers** (No installation needed):
 
 ```bash
 claude mcp list
-# Should show: playwright: npx @playwright/mcp@latest - ✓ Connected
+# Should show all servers as ✓ Connected (see Expected MCP Output above)
 ```
 
 **MCP Capabilities:**
 
-- **Browser Automation**: Navigate, click, type, screenshot, test responsiveness
-- **IDE Integration**: Get diagnostics, execute code, lint analysis
-- **Semantic Search**: Find relevant code patterns and documentation
+- **Playwright**: Browser automation, UI testing, responsive design validation
+- **Semgrep**: Security vulnerability scanning with 5,000+ rules
+- **Supabase**: Database schema analysis, query optimization, backend development
+- **Context7**: Up-to-date documentation and best practices
+- **GitHub**: Repository integration and collaboration
+- **shadcn**: Component library integration and validation
+- **Linear**: Project management and task tracking
 
 ### **GitHub Actions Setup** (Optional)
 
@@ -444,9 +445,10 @@ Automated code review on every pull request via `.github/workflows/claude-code-r
 
 **Agent Features:**
 
-- **Pragmatic Code Review**: Architecture, security, performance, maintainability analysis
-- **Design Review**: Responsive testing, accessibility compliance, visual consistency
-- **Security Review**: Vulnerability detection, OWASP compliance, penetration testing
+- **Pragmatic Code Review**: Architecture, security, performance, maintainability analysis with Supabase integration
+- **Design Review**: Responsive testing, accessibility compliance, visual consistency with Playwright automation
+- **Security Review**: Vulnerability detection with Semgrep scanning, OWASP compliance, penetration testing
+- **Feature Documentation**: Automated documentation with Supabase schema analysis
 - **Automated PR Reviews**: GitHub Actions integration for continuous quality
 
 ### **Spec-Driven Development Process**

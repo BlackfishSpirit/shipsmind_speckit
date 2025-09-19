@@ -198,6 +198,127 @@
       ]
     },
     {
+      "id": "backend-development",
+      "title": "🔧 Backend Development",
+      "description": "Database design, API development, and backend integration with Supabase",
+      "icon": "⚙️",
+      "tasks": [
+        {
+          "id": "analyze-database-schema",
+          "title": "Analyze Current Database Schema",
+          "description": "Use Supabase MCP to understand existing database structure and relationships",
+          "category": "backend",
+          "priority": "high",
+          "estimatedTime": "5 min",
+          "completed": false,
+          "commands": [
+            "# Use Claude Code with Supabase MCP:",
+            "\"Analyze my Supabase database schema and show me all tables, relationships, and constraints\"",
+            "\"Generate documentation for the current database structure\""
+          ],
+          "documentation": "/docs/backend-development-workflow.md#database-analysis"
+        },
+        {
+          "id": "design-database-changes",
+          "title": "Design Database Schema Changes",
+          "description": "Plan and design any new tables, columns, or relationships needed for your feature",
+          "category": "backend",
+          "priority": "high",
+          "estimatedTime": "10 min",
+          "completed": false,
+          "dependencies": ["analyze-database-schema"],
+          "commands": [
+            "# Use Supabase MCP for schema design:",
+            "\"Help me design database tables for [feature description]. Consider relationships, indexes, and constraints.\"",
+            "\"Generate SQL migration scripts for the new schema changes\""
+          ],
+          "documentation": "/docs/backend-development-workflow.md#schema-design"
+        },
+        {
+          "id": "implement-database-migrations",
+          "title": "Implement Database Migrations",
+          "description": "Apply database schema changes using Supabase dashboard or SQL scripts",
+          "category": "backend",
+          "priority": "high",
+          "estimatedTime": "5 min",
+          "completed": false,
+          "dependencies": ["design-database-changes"],
+          "commands": [
+            "# Execute in Supabase SQL Editor or locally:",
+            "-- Run generated migration scripts",
+            "-- Verify tables created correctly",
+            "-- Test constraints and relationships"
+          ],
+          "note": "Always backup database before running migrations in production"
+        },
+        {
+          "id": "develop-api-endpoints",
+          "title": "Develop API Endpoints",
+          "description": "Create Next.js API routes that interact with your Supabase database",
+          "category": "backend",
+          "priority": "medium",
+          "estimatedTime": "15 min",
+          "completed": false,
+          "dependencies": ["implement-database-migrations"],
+          "commands": [
+            "# Use Claude Code to generate API routes:",
+            "\"Create Next.js API endpoints for [feature] that use Supabase client\"",
+            "\"Add proper error handling and validation to the API routes\""
+          ],
+          "documentation": "/docs/backend-development-workflow.md#api-development"
+        },
+        {
+          "id": "implement-authentication",
+          "title": "Implement Authentication & Authorization",
+          "description": "Set up user authentication and role-based access control",
+          "category": "backend",
+          "priority": "high",
+          "estimatedTime": "10 min",
+          "completed": false,
+          "dependencies": ["develop-api-endpoints"],
+          "commands": [
+            "# Integrate Clerk with Supabase:",
+            "\"Help me set up Clerk authentication with Supabase database integration\"",
+            "\"Create middleware for API route protection and role-based access\""
+          ],
+          "documentation": "/docs/backend-development-workflow.md#authentication"
+        },
+        {
+          "id": "test-backend-functionality",
+          "title": "Test Backend Functionality",
+          "description": "Test API endpoints, database operations, and authentication flows",
+          "category": "backend",
+          "priority": "medium",
+          "estimatedTime": "10 min",
+          "completed": false,
+          "dependencies": ["implement-authentication"],
+          "commands": [
+            "# Test API endpoints:",
+            "curl http://localhost:3000/api/[endpoint]",
+            "# Use Supabase MCP to verify data:",
+            "\"Query the database to verify my API operations are working correctly\""
+          ],
+          "documentation": "/docs/backend-development-workflow.md#testing"
+        },
+        {
+          "id": "optimize-database-performance",
+          "title": "Optimize Database Performance",
+          "description": "Add indexes, optimize queries, and ensure efficient database operations",
+          "category": "backend",
+          "priority": "low",
+          "estimatedTime": "8 min",
+          "completed": false,
+          "dependencies": ["test-backend-functionality"],
+          "commands": [
+            "# Use Supabase MCP for optimization:",
+            "\"Analyze my database queries and suggest performance optimizations\"",
+            "\"Generate SQL for adding appropriate indexes to improve query performance\""
+          ],
+          "documentation": "/docs/backend-development-workflow.md#performance-optimization"
+        }
+      ]
+    },
+    {
       "id": "remote-ssh-setup",
       "title": "🌐 Remote SSH Development",
       "description": "Configure secure remote development via Cloudflare tunnel",
@@ -325,6 +446,117 @@
       ]
     },
     {
+      "id": "frontend-design",
+      "title": "🎨 Front-End Design",
+      "description": "Modern UI/UX design workflow with SuperDesign and component libraries",
+      "icon": "🖌️",
+      "tasks": [
+        {
+          "id": "install-superdesign",
+          "title": "Install SuperDesign Extension",
+          "description": "Install the SuperDesign VS Code extension for interactive design workflow",
+          "category": "design",
+          "priority": "high",
+          "estimatedTime": "2 min",
+          "completed": false,
+          "commands": [
+            "# Install via VS Code Extensions",
+            "# Search for 'SuperDesign' and install",
+            "# Open Command Palette (Ctrl+Shift+P)",
+            "# Type 'SuperDesign' and select canvas view"
+          ],
+          "documentation": "/docs/frontend-design-workflow.md#install-superdesign-extension"
+        },
+        {
+          "id": "initialize-superdesign",
+          "title": "Initialize SuperDesign",
+          "description": "Set up SuperDesign configuration for Claude Code integration",
+          "category": "design",
+          "priority": "high",
+          "estimatedTime": "1 min",
+          "completed": false,
+          "dependencies": ["install-superdesign"],
+          "commands": [
+            "# Command Palette: 'Initialize SuperDesign'",
+            "# This creates claude.md in home directory with design context"
+          ]
+        },
+        {
+          "id": "design-layout-phase",
+          "title": "Design Layout Phase",
+          "description": "Create 3-5 layout iterations using ASCII visualization",
+          "category": "design",
+          "priority": "high",
+          "estimatedTime": "10 min",
+          "completed": false,
+          "dependencies": ["initialize-superdesign"],
+          "commands": [
+            "/design-layout \"Create 5 layout iterations for [component/page] using SuperDesign workflow. Use ASCII format for quick visualization.\""
+          ],
+          "documentation": "/docs/frontend-design-workflow.md#stage-1-layout-phase"
+        },
+        {
+          "id": "design-theme-phase",
+          "title": "Design Theme Phase",
+          "description": "Apply visual design language and styling variations",
+          "category": "design",
+          "priority": "high",
+          "estimatedTime": "15 min",
+          "completed": false,
+          "dependencies": ["design-layout-phase"],
+          "commands": [
+            "# Generate color palette at colors.co",
+            "/design-theme \"Create 5 theme variations with different design languages. Apply the color palette and focus on modern, glass morphism, professional styles.\""
+          ],
+          "documentation": "/docs/frontend-design-workflow.md#stage-2-theme-design"
+        },
+        {
+          "id": "implement-interactivity",
+          "title": "Implement Interactivity",
+          "description": "Add animations, click effects, and interactive elements",
+          "category": "design",
+          "priority": "high",
+          "estimatedTime": "10 min",
+          "completed": false,
+          "dependencies": ["design-theme-phase"],
+          "commands": [
+            "/design-implement \"Implement the selected design with full interactivity. Add click animations, hover effects, and ensure all elements are functional.\""
+          ],
+          "documentation": "/docs/frontend-design-workflow.md#stage-3-implementation-animation"
+        },
+        {
+          "id": "component-implementation",
+          "title": "Component Library Implementation",
+          "description": "Convert design to production components using shadcn",
+          "category": "design",
+          "priority": "medium",
+          "estimatedTime": "20 min",
+          "completed": false,
+          "dependencies": ["implement-interactivity"],
+          "commands": [
+            "/shadcn \"Plan the app implementation using shadcn components. Create implementation plan in implementation.md.\"",
+            "/shadcn \"Implement the app according to the implementation plan using shadcn MCP.\""
+          ],
+          "documentation": "/docs/frontend-design-workflow.md#method-1-shadcn-component-implementation"
+        },
+        {
+          "id": "theme-customization",
+          "title": "Theme Customization",
+          "description": "Apply custom themes using TweakCN for shadcn components",
+          "category": "design",
+          "priority": "low",
+          "estimatedTime": "5 min",
+          "completed": false,
+          "dependencies": ["component-implementation"],
+          "commands": [
+            "# Browse themes at tweak-cn.vercel.app",
+            "\"Apply this TweakCN theme to our shadcn components: [paste CSS]\""
+          ],
+          "documentation": "/docs/frontend-design-workflow.md#method-2-custom-theme-application"
+        }
+      ]
+    },
+    {
       "id": "feature-development",
       "title": "🛠️ Feature Development",
       "description": "Spec-driven development workflow with AI assistance",
@@ -412,14 +644,26 @@
         {
           "id": "design-review",
           "title": "Design Review",
-          "description": "UI/UX validation with Playwright browser automation",
+          "description": "UI/UX validation with design workflow agent",
           "category": "review",
           "priority": "medium",
           "estimatedTime": "10 min",
           "completed": false,
           "dependencies": ["implement-feature"],
           "commands": ["/design-review"],
-          "documentation": "/.claude/agents/design-review.md"
+          "documentation": "/.claude/commands/design-review.md"
+        },
+        {
+          "id": "design-agent-review",
+          "title": "Design Agent Review",
+          "description": "Comprehensive design evaluation using specialized design workflow agent",
+          "category": "review",
+          "priority": "high",
+          "estimatedTime": "15 min",
+          "completed": false,
+          "dependencies": ["implement-feature"],
+          "commands": ["/design-agent \"Review the implemented feature for design quality, accessibility, and user experience. Ensure it meets modern design standards and is ready for production.\""],
+          "documentation": "/.claude/agents/design-workflow.md"
         },
         {
           "id": "security-review",

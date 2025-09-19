@@ -23,6 +23,8 @@ Search the codebase for related components using Grep/Glob tools
 
 Review any existing feature documentation to maintain consistency
 
+**Use Supabase MCP** to analyze current database schema and understand data relationships for backend features
+
 When invoked, create detailed feature documentation using the following template structure.
 
 # Feature Documentation: [Feature Name]
@@ -79,7 +81,7 @@ When invoked, create detailed feature documentation using the following template
 - [Feature flags or toggles]
 
 **Database Changes:**
-[New tables, columns, migrations needed - or "None" if not applicable]
+[New tables, columns, migrations needed - or "None" if not applicable. Use Supabase MCP to analyze current schema and plan integration.]
 
 ## Testing Approach
 **How to test this feature:**
