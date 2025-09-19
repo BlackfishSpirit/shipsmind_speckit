@@ -71,7 +71,7 @@ claude mcp list
 curl http://localhost:3000  # Should return HTML
 ```
 
-**Most Important**: The `pnpm dev` command starts your Next.js development server. Your MCP servers automatically connect when you use Claude Code, so no manual activation needed.
+**Most Important**: The `pnpm dev` command starts your Next.js development server. MCP servers automatically connect when Claude Code starts and loads the CLAUDE.md configuration. If you've just updated MCP configurations, restart Claude Code to load the new servers.
 
 ---
 
