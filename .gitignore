@@ -137,3 +137,4 @@ deployment*.tar.gz
 
 # User workflow progress (local only)
 .shipsmind/
+startup.local
