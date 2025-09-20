@@ -9,6 +9,7 @@ export default function ProfileSetupPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Step 1: Basic Information
   const [firstName, setFirstName] = useState("");
@@ -29,11 +30,18 @@ export default function ProfileSetupPage() {
   }, []);
 
   const checkAuthStatus = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      setIsAuthenticated(true);
-    } else {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setIsAuthenticated(true);
+      } else {
+        window.location.href = "/auth";
+      }
+    } catch (error) {
+      console.error('Error checking auth status:', error);
       window.location.href = "/auth";
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -197,11 +205,13 @@ export default function ProfileSetupPage() {
     }
   };
 
-  if (!isAuthenticated) {
+  if (authLoading || !isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Loading...</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            {authLoading ? "Loading..." : "Checking authentication..."}
+          </h2>
         </div>
       </div>
     );

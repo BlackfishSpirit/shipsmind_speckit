@@ -17,13 +17,36 @@ export default function LocationLookupPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [showResults, setShowResults] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Allow public access
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Interface for Google_Locations table structure
   interface GoogleLocation {
     location_code: string;
     location_name: string;
   }
+
+  // Check authentication on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setIsAuthenticated(true);
+      } else {
+        // Redirect to login if not authenticated
+        window.location.href = '/auth';
+      }
+    } catch (error) {
+      console.error('Error checking auth status:', error);
+      window.location.href = '/auth';
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -119,11 +142,13 @@ export default function LocationLookupPage() {
     window.location.href = "/auth";
   };
 
-  if (!isAuthenticated) {
+  if (authLoading || !isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Loading...</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            {authLoading ? "Loading..." : "Checking authentication..."}
+          </h2>
         </div>
       </div>
     );
