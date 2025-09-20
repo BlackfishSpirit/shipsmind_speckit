@@ -101,6 +101,12 @@ export function Header() {
             Process
           </Link>
           <Link
+            href="/auth"
+            className="nav-link font-medium text-gray-600 transition-colors hover:text-brand-600"
+          >
+            Login
+          </Link>
+          <Link
             href="#contact"
             className="rounded-full border border-gray-300 bg-white px-5 py-2 font-semibold text-brand-600 transition-colors hover:bg-gray-50"
           >
@@ -139,6 +145,13 @@ export function Header() {
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Process
+          </Link>
+          <Link
+            href="/auth"
+            className="block px-6 py-2 text-gray-600 transition-colors hover:bg-gray-50"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Login
           </Link>
           <Link
             href="#contact"
