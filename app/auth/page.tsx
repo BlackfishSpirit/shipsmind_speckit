@@ -52,11 +52,78 @@ export default function AuthPage() {
     setPasswordValidation(validatePassword(signupPassword));
   }, [signupPassword]);
 
+  // Auto-save SERP settings when they change (with debounce)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const timeoutId = setTimeout(() => {
+      autoSaveSerpSettings();
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [serpKeywords, serpCategory, serpExcludedCategory, serpLocations, serpStates, isAuthenticated]);
+
   const checkAuthStatus = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       setIsAuthenticated(true);
       setUserEmail(session.user.email || "");
+      await loadSerpSettings(session.user.id);
+    }
+  };
+
+  const loadSerpSettings = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('User_Accounts')
+        .select('serp_keywords, serp_cat, serp_exc_cat, serp_locations, serp_states')
+        .eq('uuid', userId)
+        .single();
+
+      if (error) {
+        console.error('Error loading SERP settings:', error);
+        return;
+      }
+
+      if (data) {
+        setSerpKeywords(data.serp_keywords || "");
+        setSerpCategory(data.serp_cat || "");
+        setSerpExcludedCategory(data.serp_exc_cat || "");
+        setSerpLocations(data.serp_locations || "");
+        setSerpStates(data.serp_states || "");
+      }
+    } catch (error) {
+      console.error('Error loading SERP settings:', error);
+    }
+  };
+
+  const autoSaveSerpSettings = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    try {
+      const cleanedKeywords = cleanCommaSeparatedValues(serpKeywords);
+      const cleanedCategory = cleanCommaSeparatedValues(serpCategory);
+      const cleanedExcludedCategory = cleanCommaSeparatedValues(serpExcludedCategory);
+      const cleanedLocations = cleanCommaSeparatedValues(serpLocations);
+      const cleanedStates = cleanCommaSeparatedValues(serpStates);
+
+      const { error } = await supabase
+        .from('User_Accounts')
+        .update({
+          serp_keywords: cleanedKeywords || null,
+          serp_cat: cleanedCategory || null,
+          serp_exc_cat: cleanedExcludedCategory || null,
+          serp_locations: cleanedLocations || null,
+          serp_states: cleanedStates || null
+        })
+        .eq('uuid', session.user.id);
+
+      if (error) {
+        console.error('Error auto-saving SERP settings:', error);
+      }
+    } catch (error) {
+      console.error('Error auto-saving SERP settings:', error);
     }
   };
 
@@ -76,6 +143,7 @@ export default function AuthPage() {
       if (authData.user) {
         setIsAuthenticated(true);
         setUserEmail(authData.user.email || "");
+        await loadSerpSettings(authData.user.id);
         setMessage("Successfully logged in!");
       }
     } catch (error: any) {
@@ -121,8 +189,102 @@ export default function AuthPage() {
     }
   };
 
-  const handleStartSearch = () => {
-    setMessage("Search functionality would be implemented here");
+  const handleStartSearch = async () => {
+    setIsLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      // Get the current session for auth
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        setError("Please log in first");
+        return;
+      }
+
+      // First, update the SERP settings in the database
+      const cleanedKeywords = cleanCommaSeparatedValues(serpKeywords, true);
+      const cleanedCategory = cleanCommaSeparatedValues(serpCategory, false);
+      const cleanedExcludedCategory = cleanCommaSeparatedValues(serpExcludedCategory, false);
+      const cleanedLocations = cleanCommaSeparatedValues(serpLocations, false);
+      const cleanedStates = cleanCommaSeparatedValues(serpStates, true);
+
+      const { error: updateError } = await supabase
+        .from('User_Accounts')
+        .update({
+          serp_keywords: cleanedKeywords || null,
+          serp_cat: cleanedCategory || null,
+          serp_exc_cat: cleanedExcludedCategory || null,
+          serp_locations: cleanedLocations || null,
+          serp_states: cleanedStates || null
+        })
+        .eq('uuid', session.user.id);
+
+      if (updateError) {
+        console.error('Error updating SERP settings before search:', updateError);
+        setError('Failed to update SERP settings before starting search.');
+        return;
+      }
+
+      // Get account number for webhook call
+      const { data: accountData, error: accountError } = await supabase
+        .from('User_Accounts')
+        .select('account_number')
+        .eq('uuid', session.user.id)
+        .single();
+
+      if (accountError || !accountData?.account_number) {
+        console.error('Error getting account number:', accountError);
+        setError('Unable to get account number for search.');
+        return;
+      }
+
+      // Call the search webhook
+      const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/fc85b949-e81a-4a7c-849d-b7e1d775c4d0';
+      const params = new URLSearchParams({
+        account_number: accountData.account_number,
+        repeat_searches: repeatSearches.toString()
+      });
+
+      const response = await fetch(`${webhookUrl}?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      setMessage('Search started successfully!');
+
+    } catch (error: any) {
+      console.error('Error starting search:', error);
+      setError('Failed to start search. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Helper function to clean comma-separated values
+  const cleanCommaSeparatedValues = (value: string, allowSpaces = false) => {
+    if (!value || typeof value !== 'string') {
+      return '';
+    }
+
+    // Split by comma, trim each value, filter out empty values
+    const values = value.split(',').map(val => val.trim()).filter(val => val.length > 0);
+
+    if (!allowSpaces) {
+      // For fields that don't allow spaces, remove all spaces from each value
+      return values.map(val => val.replace(/\s/g, '')).join(',');
+    } else {
+      // For fields that allow spaces (keywords and states), just join back
+      return values.join(',');
+    }
   };
 
   if (isAuthenticated) {

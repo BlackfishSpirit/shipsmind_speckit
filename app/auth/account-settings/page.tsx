@@ -86,31 +86,131 @@ export default function AccountSettingsPage() {
   const handleGenerateProfile = async () => {
     setMessage("");
     setError("");
+    setIsLoading(true);
 
     if (!businessUrl) {
       setError("Please enter a business URL first");
+      setIsLoading(false);
       return;
     }
 
     try {
-      // Simulate profile generation
-      const generatedProfile = `${businessName} is a leading business located at ${businessStreet}, ${businessCity}, ${businessState} ${businessZip}. Visit us online at ${businessUrl} for more information about our services and offerings.`;
-      setBusinessProfileText(generatedProfile);
-      setMessage("Business profile generated successfully!");
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        setError('Please log in first');
+        setIsLoading(false);
+        return;
+      }
+
+      // Get account number for webhook call
+      const { data: accountData, error: accountError } = await supabase
+        .from('User_Accounts')
+        .select('account_number')
+        .eq('uuid', session.user.id)
+        .single();
+
+      if (accountError || !accountData?.account_number) {
+        console.error('Error getting account number:', accountError);
+        setError('Unable to get account number for profile generation.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Call the profile generation webhook
+      const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/54f613d0-40f2-4f1c-9a8a-70f0ac45416f';
+      const params = new URLSearchParams({
+        account_number: accountData.account_number,
+        alt_url: ''
+      });
+
+      const response = await fetch(`${webhookUrl}?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      setMessage('Profile generated successfully!');
+
+      // Refresh the business profile after webhook
+      setTimeout(async () => {
+        await refreshBusinessProfile();
+      }, 2000);
+
     } catch (error: any) {
-      setError(error.message);
+      console.error('Error generating profile:', error);
+      setError('Failed to generate profile. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshBusinessProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('User_Accounts')
+        .select('business_profile')
+        .eq('uuid', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Error refreshing business profile:', error);
+        setError('Profile generated, but unable to refresh display. Please reload the page to see updates.');
+        return;
+      }
+
+      if (data) {
+        setBusinessProfileText(data.business_profile || '');
+      }
+
+    } catch (error) {
+      console.error('Network error refreshing business profile:', error);
+      setError('Profile generated, but unable to refresh display due to connection issues. Please reload the page to see updates.');
     }
   };
 
   const handleSaveProfile2 = async () => {
     setMessage("");
     setError("");
+    setIsLoading(true);
 
     try {
-      // In a real app, save business profile text to database
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('Please log in first');
+        setIsLoading(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('User_Accounts')
+        .update({
+          business_profile: businessProfileText
+        })
+        .eq('uuid', session.user.id);
+
+      if (error) {
+        console.error('Error updating business profile:', error);
+        setError('Failed to save profile. Please try again.');
+        return;
+      }
+
       setMessage("Business profile saved successfully!");
     } catch (error: any) {
+      console.error('Error saving business profile:', error);
       setError(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -334,15 +434,17 @@ export default function AccountSettingsPage() {
           <div className="flex space-x-4">
             <button
               onClick={handleGenerateProfile}
-              className="rounded-lg bg-green-600 px-6 py-2 text-white font-medium hover:bg-green-700 transition-colors"
+              disabled={isLoading}
+              className="rounded-lg bg-green-600 px-6 py-2 text-white font-medium hover:bg-green-700 disabled:bg-gray-400 transition-colors"
             >
-              Generate from URL
+              {isLoading ? "Generating..." : "Generate from URL"}
             </button>
             <button
               onClick={handleSaveProfile2}
-              className="rounded-lg bg-brand-600 px-6 py-2 text-white font-medium hover:bg-brand-700 transition-colors"
+              disabled={isLoading}
+              className="rounded-lg bg-brand-600 px-6 py-2 text-white font-medium hover:bg-brand-700 disabled:bg-gray-400 transition-colors"
             >
-              Save Profile
+              {isLoading ? "Saving..." : "Save Profile"}
             </button>
           </div>
         </div>

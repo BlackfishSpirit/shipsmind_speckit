@@ -17,34 +17,13 @@ export default function LocationLookupPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [showResults, setShowResults] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Allow public access
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      setIsAuthenticated(true);
-    } else {
-      window.location.href = "/auth";
-    }
-  };
-
-  // Mock location data for demonstration
-  const mockLocationData = [
-    { code: "1027744", name: "Seattle, WA, United States" },
-    { code: "1027745", name: "Spokane, WA, United States" },
-    { code: "1027746", name: "Tacoma, WA, United States" },
-    { code: "1027747", name: "Vancouver, WA, United States" },
-    { code: "200819", name: "Portland, OR, United States" },
-    { code: "200820", name: "Eugene, OR, United States" },
-    { code: "200821", name: "Salem, OR, United States" },
-    { code: "1006094", name: "San Francisco, CA, United States" },
-    { code: "1006095", name: "Los Angeles, CA, United States" },
-    { code: "1006096", name: "San Diego, CA, United States" },
-  ];
+  // Interface for Google_Locations table structure
+  interface GoogleLocation {
+    location_code: string;
+    location_name: string;
+  }
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -57,24 +36,38 @@ export default function LocationLookupPage() {
     setShowResults(false);
 
     try {
-      // Simulate API call with mock data
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Searching for:', searchTerm);
 
-      const filteredResults = mockLocationData.filter(
-        location =>
-          location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          location.code.includes(searchTerm)
-      );
+      // Query the Google_Locations table from Supabase
+      const { data, error } = await supabase
+        .from('Google_Locations')
+        .select('location_code, location_name')
+        .ilike('location_name', `%${searchTerm}%`)
+        .limit(50);
 
-      setResults(filteredResults);
+      if (error) {
+        console.error('Error searching locations:', error);
+        throw new Error(`Failed to search locations: ${error.message}`);
+      }
+
+      console.log('Search results:', data);
+
+      // Convert to our interface format
+      const locationResults: LocationResult[] = (data || []).map((item: GoogleLocation) => ({
+        code: item.location_code,
+        name: item.location_name
+      }));
+
+      setResults(locationResults);
       setShowResults(true);
       setSelectedLocations(new Set());
 
-      if (filteredResults.length === 0) {
+      if (locationResults.length === 0) {
         setError("No locations found. Try a different search term.");
       }
     } catch (error: any) {
-      setError(error.message);
+      console.error('Error performing search:', error);
+      setError(error.message || 'An error occurred while searching. Please try again.');
     } finally {
       setIsLoading(false);
     }
