@@ -38,6 +38,25 @@ export default function AuthPage() {
     checkAuthStatus();
   }, []);
 
+  // Check for selected categories from localStorage after auth is established
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const selectedCategories = localStorage.getItem('selectedCategories');
+    if (selectedCategories) {
+      setSerpCategory(prevCategories => {
+        const currentCategories = prevCategories.trim();
+        const newCategories = currentCategories
+          ? `${currentCategories},${selectedCategories}`
+          : selectedCategories;
+        return newCategories;
+      });
+
+      // Clear from localStorage
+      localStorage.removeItem('selectedCategories');
+    }
+  }, [isAuthenticated]);
+
   // Validate signup form
   useEffect(() => {
     const emailsMatch = validateEmailMatch(signupEmail, signupVerifyEmail);
@@ -345,9 +364,17 @@ export default function AuthPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Categories:
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Categories:
+                  </label>
+                  <Link
+                    href="/auth/category-lookup"
+                    className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                  >
+                    Browse
+                  </Link>
+                </div>
                 <input
                   type="text"
                   value={serpCategory}
@@ -358,9 +385,17 @@ export default function AuthPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Excluded Categories:
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Excluded Categories:
+                  </label>
+                  <Link
+                    href="/auth/category-lookup"
+                    className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                  >
+                    Browse
+                  </Link>
+                </div>
                 <input
                   type="text"
                   value={serpExcludedCategory}
