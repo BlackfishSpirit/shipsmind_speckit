@@ -64,7 +64,17 @@
       "Bash(claude config ls -g)",
       "Bash(claude config get mcpServers)",
       "Bash(dir:*)",
-      "mcp__linear__get_issue"
+      "mcp__linear__get_issue",
+      "Read(//c/vscodedev/Github Repos/Wraek/email_site/**)",
+      "Bash(pnpm type-check:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__linear__update_issue",
+      "mcp__linear__list_issues",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_snapshot",
+      "mcp__semgrep__security_check",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_fill_form"
     ],
     "deny": [],
     "ask": []
