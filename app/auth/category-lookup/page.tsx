@@ -20,7 +20,7 @@ export default function CategoryLookupPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Interface for Google_Categories table structure
+  // Interface for google_categories table structure
   interface GoogleCategory {
     category_code: string;
     category_name: string;

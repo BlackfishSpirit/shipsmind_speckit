@@ -83,18 +83,30 @@ export default function AuthPage() {
   }, [serpKeywords, serpCategory, serpExcludedCategory, serpLocations, serpStates, isAuthenticated]);
 
   const checkAuthStatus = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      setIsAuthenticated(true);
-      setUserEmail(session.user.email || "");
-      await loadSerpSettings(session.user.id);
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('Auth session error:', error);
+        setError(`Authentication error: ${error.message}`);
+        return;
+      }
+
+      if (session?.user) {
+        setIsAuthenticated(true);
+        setUserEmail(session.user.email || "");
+        await loadSerpSettings(session.user.id);
+      }
+    } catch (error) {
+      console.error('Error checking auth status:', error);
+      setError('Failed to check authentication status');
     }
   };
 
   const loadSerpSettings = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('User_Accounts')
+        .from('user_accounts')
         .select('serp_keywords, serp_cat, serp_exc_cat, serp_locations, serp_states')
         .eq('uuid', userId)
         .single();
@@ -121,14 +133,14 @@ export default function AuthPage() {
     if (!session?.user) return;
 
     try {
-      const cleanedKeywords = cleanCommaSeparatedValues(serpKeywords);
+      const cleanedKeywords = cleanCommaSeparatedValues(serpKeywords, true);
       const cleanedCategory = cleanCommaSeparatedValues(serpCategory);
       const cleanedExcludedCategory = cleanCommaSeparatedValues(serpExcludedCategory);
       const cleanedLocations = cleanCommaSeparatedValues(serpLocations);
-      const cleanedStates = cleanCommaSeparatedValues(serpStates);
+      const cleanedStates = cleanCommaSeparatedValues(serpStates, true);
 
       const { error } = await supabase
-        .from('User_Accounts')
+        .from('user_accounts')
         .update({
           serp_keywords: cleanedKeywords || null,
           serp_cat: cleanedCategory || null,
@@ -208,6 +220,51 @@ export default function AuthPage() {
     }
   };
 
+  const handleSaveSettings = async () => {
+    setIsLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setError('Please log in first');
+        setIsLoading(false);
+        return;
+      }
+
+      const cleanedKeywords = cleanCommaSeparatedValues(serpKeywords, true);
+      const cleanedCategory = cleanCommaSeparatedValues(serpCategory, false);
+      const cleanedExcludedCategory = cleanCommaSeparatedValues(serpExcludedCategory, false);
+      const cleanedLocations = cleanCommaSeparatedValues(serpLocations, false);
+      const cleanedStates = cleanCommaSeparatedValues(serpStates, true);
+
+      const { error: updateError } = await supabase
+        .from('user_accounts')
+        .update({
+          serp_keywords: cleanedKeywords || null,
+          serp_cat: cleanedCategory || null,
+          serp_exc_cat: cleanedExcludedCategory || null,
+          serp_locations: cleanedLocations || null,
+          serp_states: cleanedStates || null
+        })
+        .eq('uuid', session.user.id);
+
+      if (updateError) {
+        console.error('Error saving SERP settings:', updateError);
+        setError('Failed to save settings. Please try again.');
+        return;
+      }
+
+      setMessage('Settings saved successfully!');
+    } catch (error: any) {
+      console.error('Error saving SERP settings:', error);
+      setError('Failed to save settings. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleStartSearch = async () => {
     setIsLoading(true);
     setError("");
@@ -230,7 +287,7 @@ export default function AuthPage() {
       const cleanedStates = cleanCommaSeparatedValues(serpStates, true);
 
       const { error: updateError } = await supabase
-        .from('User_Accounts')
+        .from('user_accounts')
         .update({
           serp_keywords: cleanedKeywords || null,
           serp_cat: cleanedCategory || null,
@@ -248,7 +305,7 @@ export default function AuthPage() {
 
       // Get account number for webhook call
       const { data: accountData, error: accountError } = await supabase
-        .from('User_Accounts')
+        .from('user_accounts')
         .select('account_number')
         .eq('uuid', session.user.id)
         .single();
@@ -462,12 +519,22 @@ export default function AuthPage() {
               </label>
             </div>
 
-            <button
-              onClick={handleStartSearch}
-              className="rounded-lg bg-brand-600 px-8 py-3 text-white font-medium hover:bg-brand-700 transition-colors"
-            >
-              Start Search
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={handleSaveSettings}
+                disabled={isLoading}
+                className="rounded-lg bg-green-600 px-6 py-3 text-white font-medium hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+              >
+                {isLoading ? "Saving..." : "Save Settings"}
+              </button>
+              <button
+                onClick={handleStartSearch}
+                disabled={isLoading}
+                className="rounded-lg bg-brand-600 px-8 py-3 text-white font-medium hover:bg-brand-700 disabled:bg-gray-400 transition-colors"
+              >
+                {isLoading ? "Starting..." : "Start Search"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

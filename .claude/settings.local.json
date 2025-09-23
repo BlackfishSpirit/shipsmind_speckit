@@ -77,7 +77,8 @@
       "mcp__playwright__browser_fill_form",
       "mcp__playwright__browser_type",
       "mcp__playwright__browser_console_messages",
-      "mcp__supabase__list_tables"
+      "mcp__supabase__list_tables",
+      "mcp__playwright__browser_evaluate"
     ],
     "deny": [],
     "ask": []

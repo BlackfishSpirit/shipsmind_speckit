@@ -61,9 +61,9 @@ export default function LocationLookupPage() {
     try {
       console.log('Searching for:', searchTerm);
 
-      // Query the Google_Locations table from Supabase
+      // Query the google_locations table from Supabase
       const { data, error } = await supabase
-        .from('Google_Locations')
+        .from('google_locations')
         .select('location_code, location_name')
         .ilike('location_name', `%${searchTerm}%`)
         .limit(50);
