@@ -4,31 +4,41 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 
-interface LocationResult {
+interface CategoryResult {
   code: string;
   name: string;
 }
 
-export default function LocationLookupPage() {
+export default function CategoryLookupPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<LocationResult[]>([]);
-  const [selectedLocations, setSelectedLocations] = useState<Set<string>>(new Set());
+  const [results, setResults] = useState<CategoryResult[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [categoryType, setCategoryType] = useState<'included' | 'excluded'>('included');
 
-  // Interface for Google_Locations table structure
-  interface GoogleLocation {
-    location_code: string;
-    location_name: string;
+  // Interface for google_categories table structure
+  interface GoogleCategory {
+    category_code: string;
+    category_name: string;
   }
 
-  // Check authentication on mount
+  // Check authentication and URL parameters on mount
   useEffect(() => {
     checkAuthStatus();
+
+    // Read URL parameter to determine category type
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    if (type === 'excluded') {
+      setCategoryType('excluded');
+    } else {
+      setCategoryType('included');
+    }
   }, []);
 
   const checkAuthStatus = async () => {
@@ -59,34 +69,41 @@ export default function LocationLookupPage() {
     setShowResults(false);
 
     try {
-      console.log('Searching for:', searchTerm);
+      console.log('Searching for categories:', searchTerm);
 
-      // Query the google_locations table from Supabase
+      // Query the google_categories table from Supabase
       const { data, error } = await supabase
-        .from('google_locations')
-        .select('location_code, location_name')
-        .ilike('location_name', `%${searchTerm}%`)
+        .from('google_categories')
+        .select('*')
+        .ilike('category', `%${searchTerm}%`)
         .limit(50);
 
       if (error) {
-        console.error('Error searching locations:', error);
-        throw new Error(`Failed to search locations: ${error.message}`);
+        console.error('Error searching categories:', error);
+        throw new Error(`Failed to search categories: ${error.message}`);
       }
 
       console.log('Search results:', data);
+      console.log('First result structure:', data?.[0]);
 
-      // Convert to our interface format
-      const locationResults: LocationResult[] = (data || []).map((item: GoogleLocation) => ({
-        code: item.location_code,
-        name: item.location_name
-      }));
+      // Convert to our interface format - we'll determine the actual column names from the data
+      const categoryResults: CategoryResult[] = (data || []).map((item: any) => {
+        // Try different possible column name combinations
+        const code = item.code || item.category_code || item.id || Object.values(item)[0];
+        const name = item.category || item.name || item.category_name || Object.values(item)[1];
 
-      setResults(locationResults);
+        return {
+          code: String(code),
+          name: String(name)
+        };
+      });
+
+      setResults(categoryResults);
       setShowResults(true);
-      setSelectedLocations(new Set());
+      setSelectedCategories(new Set());
 
-      if (locationResults.length === 0) {
-        setError("No locations found. Try a different search term.");
+      if (categoryResults.length === 0) {
+        setError("No categories found. Try a different search term.");
       }
     } catch (error: any) {
       console.error('Error performing search:', error);
@@ -97,48 +114,48 @@ export default function LocationLookupPage() {
   };
 
   const handleSelectAll = () => {
-    if (selectedLocations.size === results.length) {
-      setSelectedLocations(new Set());
+    if (selectedCategories.size === results.length) {
+      setSelectedCategories(new Set());
     } else {
-      setSelectedLocations(new Set(results.map(r => r.code)));
+      setSelectedCategories(new Set(results.map(r => r.name)));
     }
   };
 
-  const handleLocationToggle = (code: string) => {
-    const newSelected = new Set(selectedLocations);
-    if (newSelected.has(code)) {
-      newSelected.delete(code);
+  const handleCategoryToggle = (name: string) => {
+    const newSelected = new Set(selectedCategories);
+    if (newSelected.has(name)) {
+      newSelected.delete(name);
     } else {
-      newSelected.add(code);
+      newSelected.add(name);
     }
-    setSelectedLocations(newSelected);
+    setSelectedCategories(newSelected);
   };
 
   const handleSaveAndSearchAgain = async () => {
-    const success = await saveSelectedLocations();
+    const success = await saveSelectedCategories();
     if (success) {
       // Clear selections and search results
       setSearchTerm("");
       setResults([]);
-      setSelectedLocations(new Set());
+      setSelectedCategories(new Set());
       setShowResults(false);
-      setMessage('Locations saved successfully! You can search for more locations.');
+      setMessage('Categories saved successfully! You can search for more categories.');
     }
   };
 
   const handleSaveAndReturn = async () => {
-    const success = await saveSelectedLocations();
+    const success = await saveSelectedCategories();
     if (success) {
-      setMessage('Locations saved successfully! Returning to dashboard...');
+      setMessage('Categories saved successfully! Returning to dashboard...');
       setTimeout(() => {
         window.location.href = "/auth";
       }, 1500);
     }
   };
 
-  const saveSelectedLocations = async () => {
-    if (selectedLocations.size === 0) {
-      setError("Please select at least one location to save.");
+  const saveSelectedCategories = async () => {
+    if (selectedCategories.size === 0) {
+      setError("Please select at least one category to save.");
       return false;
     }
 
@@ -154,49 +171,53 @@ export default function LocationLookupPage() {
         return false;
       }
 
-      // Get current serp_locations value
+      // Determine which column to update based on category type
+      const columnName = categoryType === 'excluded' ? 'serp_exc_cat' : 'serp_cat';
+
+      // Get current category value
       const { data: currentData, error: fetchError } = await supabase
         .from('user_accounts')
-        .select('serp_locations')
+        .select(columnName)
         .eq('uuid', session.user.id)
         .single();
 
       if (fetchError) {
-        console.error('Error fetching current locations:', fetchError);
-        setError('Failed to fetch current location data.');
+        console.error('Error fetching current categories:', fetchError);
+        setError('Failed to fetch current category data.');
         return false;
       }
 
-      // Prepare new location codes string
-      const selectedCodes = Array.from(selectedLocations);
-      let newLocationsString = '';
-      const currentLocations = currentData?.serp_locations;
+      // Prepare new category names string
+      const selectedNames = Array.from(selectedCategories);
+      let newCategoriesString = '';
+      const currentCategories = currentData?.[columnName];
 
-      if (!currentLocations || currentLocations.trim() === '') {
-        // No existing locations, just use new codes
-        newLocationsString = selectedCodes.join(',');
+      if (!currentCategories || currentCategories.trim() === '') {
+        // No existing categories, just use new names
+        newCategoriesString = selectedNames.join(',');
       } else {
-        // Append new codes to existing ones
-        newLocationsString = currentLocations + ',' + selectedCodes.join(',');
+        // Append new names to existing ones
+        newCategoriesString = currentCategories + ',' + selectedNames.join(',');
       }
 
       // Update the database
+      const updateData = { [columnName]: newCategoriesString };
       const { error: updateError } = await supabase
         .from('user_accounts')
-        .update({ serp_locations: newLocationsString })
+        .update(updateData)
         .eq('uuid', session.user.id);
 
       if (updateError) {
-        console.error('Error updating locations:', updateError);
-        setError('Failed to save location codes.');
+        console.error('Error updating categories:', updateError);
+        setError('Failed to save category codes.');
         return false;
       }
 
       return true;
 
     } catch (error) {
-      console.error('Error saving locations:', error);
-      setError('An error occurred while saving locations.');
+      console.error('Error saving categories:', error);
+      setError('An error occurred while saving categories.');
       return false;
     } finally {
       setIsLoading(false);
@@ -223,7 +244,9 @@ export default function LocationLookupPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 pb-4">
-        <h2 className="text-2xl font-bold text-gray-900">Location Lookup</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {categoryType === 'excluded' ? 'Excluded Categories Lookup' : 'Categories Lookup'}
+        </h2>
         <div className="flex items-center space-x-4">
           <Link
             href="/auth"
@@ -254,14 +277,14 @@ export default function LocationLookupPage() {
 
       {/* Search Section */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Search Locations</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Search Categories</h3>
         <p className="text-sm text-gray-600">
-          Search for location codes to add to your SERP settings. Select the locations you want and choose your save option.
+          Search for category codes to add to your SERP settings. Select the categories you want and choose your save option.
         </p>
         <div className="flex space-x-4">
           <input
             type="text"
-            placeholder="Enter location name or code..."
+            placeholder="Enter category name or code..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -282,20 +305,20 @@ export default function LocationLookupPage() {
         <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
           <button
             onClick={handleSaveAndSearchAgain}
-            disabled={selectedLocations.size === 0 || isLoading}
+            disabled={selectedCategories.size === 0 || isLoading}
             className="rounded-lg bg-brand-600 px-4 py-2 text-white font-medium hover:bg-brand-700 disabled:bg-gray-400 transition-colors"
           >
             {isLoading ? "Saving..." : "Save & Search Again"}
           </button>
           <button
             onClick={handleSaveAndReturn}
-            disabled={selectedLocations.size === 0 || isLoading}
+            disabled={selectedCategories.size === 0 || isLoading}
             className="rounded-lg bg-green-600 px-4 py-2 text-white font-medium hover:bg-green-700 disabled:bg-gray-400 transition-colors"
           >
             {isLoading ? "Saving..." : "Save & Return"}
           </button>
           <span className="text-sm text-gray-600">
-            Select locations below, then choose a save option
+            Select {categoryType === 'excluded' ? 'excluded ' : ''}categories below, then choose a save option
           </span>
         </div>
       )}
@@ -304,13 +327,13 @@ export default function LocationLookupPage() {
       <div>
         {isLoading && (
           <div className="text-center py-8 text-gray-600">
-            Searching locations...
+            Searching categories...
           </div>
         )}
 
         {showResults && results.length === 0 && !isLoading && (
           <div className="text-center py-8 text-gray-600">
-            No locations found. Try a different search term.
+            No categories found. Try a different search term.
           </div>
         )}
 
@@ -322,40 +345,34 @@ export default function LocationLookupPage() {
                   <th className="w-16 px-4 py-3 text-center">
                     <input
                       type="checkbox"
-                      checked={selectedLocations.size === results.length && results.length > 0}
+                      checked={selectedCategories.size === results.length && results.length > 0}
                       onChange={handleSelectAll}
                       className="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
                     />
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                    Location Code
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                    Location Name
+                    Category Name
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {results.map((location) => (
+                {results.map((category) => (
                   <tr
-                    key={location.code}
+                    key={category.name}
                     className={`hover:bg-gray-50 ${
-                      selectedLocations.has(location.code) ? "bg-blue-50" : ""
+                      selectedCategories.has(category.name) ? "bg-blue-50" : ""
                     }`}
                   >
                     <td className="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        checked={selectedLocations.has(location.code)}
-                        onChange={() => handleLocationToggle(location.code)}
+                        checked={selectedCategories.has(category.name)}
+                        onChange={() => handleCategoryToggle(category.name)}
                         className="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
                       />
                     </td>
-                    <td className="px-4 py-3 font-mono text-sm text-gray-900">
-                      {location.code}
-                    </td>
                     <td className="px-4 py-3 text-gray-900">
-                      {location.name}
+                      {category.name}
                     </td>
                   </tr>
                 ))}

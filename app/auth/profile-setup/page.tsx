@@ -85,7 +85,7 @@ export default function ProfileSetupPage() {
 
       // Get account number for webhook call
       const { data: accountData, error: accountError } = await supabase
-        .from('User_Accounts')
+        .from('user_accounts')
         .select('account_number')
         .eq('uuid', session.user.id)
         .single();
@@ -137,7 +137,7 @@ export default function ProfileSetupPage() {
       if (!session) return;
 
       const { data, error } = await supabase
-        .from('User_Accounts')
+        .from('user_accounts')
         .select('business_profile')
         .eq('uuid', session.user.id)
         .single();
@@ -172,7 +172,7 @@ export default function ProfileSetupPage() {
       }
 
       const { error } = await supabase
-        .from('User_Accounts')
+        .from('user_accounts')
         .update({
           business_profile: businessProfileText
         })
