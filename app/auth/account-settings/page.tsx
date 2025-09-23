@@ -430,7 +430,7 @@ export default function AccountSettingsPage() {
       <form onSubmit={handleSaveProfile} className="space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">
-            User Profile
+            User
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -509,7 +509,7 @@ export default function AccountSettingsPage() {
 
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">
-            Business Profile
+            Business
           </h3>
           <div className="space-y-4">
             <input
