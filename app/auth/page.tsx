@@ -11,6 +11,7 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
 
   // Login form state
@@ -32,30 +33,14 @@ export default function AuthPage() {
   const [serpLocations, setSerpLocations] = useState("");
   const [serpStates, setSerpStates] = useState("");
   const [repeatSearches, setRepeatSearches] = useState(false);
+  const [serpDataLoaded, setSerpDataLoaded] = useState(false);
 
   // Check auth status on mount
   useEffect(() => {
     checkAuthStatus();
   }, []);
 
-  // Check for selected categories from localStorage after auth is established
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const selectedCategories = localStorage.getItem('selectedCategories');
-    if (selectedCategories) {
-      setSerpCategory(prevCategories => {
-        const currentCategories = prevCategories.trim();
-        const newCategories = currentCategories
-          ? `${currentCategories},${selectedCategories}`
-          : selectedCategories;
-        return newCategories;
-      });
-
-      // Clear from localStorage
-      localStorage.removeItem('selectedCategories');
-    }
-  }, [isAuthenticated]);
+  // No localStorage logic needed - categories now save directly to database
 
   // Validate signup form
   useEffect(() => {
@@ -73,14 +58,14 @@ export default function AuthPage() {
 
   // Auto-save SERP settings when they change (with debounce)
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !serpDataLoaded) return;
 
     const timeoutId = setTimeout(() => {
       autoSaveSerpSettings();
     }, 1000); // 1 second debounce
 
     return () => clearTimeout(timeoutId);
-  }, [serpKeywords, serpCategory, serpExcludedCategory, serpLocations, serpStates, isAuthenticated]);
+  }, [serpKeywords, serpCategory, serpExcludedCategory, serpLocations, serpStates, isAuthenticated, serpDataLoaded]);
 
   const checkAuthStatus = async () => {
     try {
@@ -100,6 +85,8 @@ export default function AuthPage() {
     } catch (error) {
       console.error('Error checking auth status:', error);
       setError('Failed to check authentication status');
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -122,6 +109,9 @@ export default function AuthPage() {
         setSerpExcludedCategory(data.serp_exc_cat || "");
         setSerpLocations(data.serp_locations || "");
         setSerpStates(data.serp_states || "");
+
+        // Mark that the data has been loaded to enable auto-save
+        setSerpDataLoaded(true);
       }
     } catch (error) {
       console.error('Error loading SERP settings:', error);
@@ -215,55 +205,12 @@ export default function AuthPage() {
     const { error } = await supabase.auth.signOut();
     if (!error) {
       setIsAuthenticated(false);
+      setSerpDataLoaded(false);
       setUserEmail("");
       setMessage("Successfully logged out!");
     }
   };
 
-  const handleSaveSettings = async () => {
-    setIsLoading(true);
-    setError("");
-    setMessage("");
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        setError('Please log in first');
-        setIsLoading(false);
-        return;
-      }
-
-      const cleanedKeywords = cleanCommaSeparatedValues(serpKeywords, true);
-      const cleanedCategory = cleanCommaSeparatedValues(serpCategory, false);
-      const cleanedExcludedCategory = cleanCommaSeparatedValues(serpExcludedCategory, false);
-      const cleanedLocations = cleanCommaSeparatedValues(serpLocations, false);
-      const cleanedStates = cleanCommaSeparatedValues(serpStates, true);
-
-      const { error: updateError } = await supabase
-        .from('user_accounts')
-        .update({
-          serp_keywords: cleanedKeywords || null,
-          serp_cat: cleanedCategory || null,
-          serp_exc_cat: cleanedExcludedCategory || null,
-          serp_locations: cleanedLocations || null,
-          serp_states: cleanedStates || null
-        })
-        .eq('uuid', session.user.id);
-
-      if (updateError) {
-        console.error('Error saving SERP settings:', updateError);
-        setError('Failed to save settings. Please try again.');
-        return;
-      }
-
-      setMessage('Settings saved successfully!');
-    } catch (error: any) {
-      console.error('Error saving SERP settings:', error);
-      setError('Failed to save settings. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleStartSearch = async () => {
     setIsLoading(true);
@@ -332,10 +279,15 @@ export default function AuthPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Search failed (${response.status}): ${errorText}`);
       }
 
-      setMessage('Search started successfully!');
+      // Get the response text from the webhook
+      const responseText = await response.text();
+
+      // Display the actual response from the webhook
+      setMessage(responseText || 'Search started successfully!');
 
     } catch (error: any) {
       console.error('Error starting search:', error);
@@ -363,12 +315,30 @@ export default function AuthPage() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
+          <p className="text-gray-600">Checking authentication status</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isAuthenticated) {
     return (
       <div className="space-y-8">
         <div className="flex items-center justify-between border-b border-gray-200 pb-6">
           <h2 className="text-3xl font-bold text-gray-900">Welcome!</h2>
           <div className="flex items-center space-x-4">
+            <Link
+              href="/auth/leads"
+              className="text-brand-600 hover:text-brand-700 font-medium"
+            >
+              View Leads
+            </Link>
             <Link
               href="/auth/account-settings"
               className="text-brand-600 hover:text-brand-700 font-medium"
@@ -426,7 +396,7 @@ export default function AuthPage() {
                     Categories:
                   </label>
                   <Link
-                    href="/auth/category-lookup"
+                    href="/auth/category-lookup?type=included"
                     className="text-sm text-brand-600 hover:text-brand-700 font-medium"
                   >
                     Browse
@@ -447,7 +417,7 @@ export default function AuthPage() {
                     Excluded Categories:
                   </label>
                   <Link
-                    href="/auth/category-lookup"
+                    href="/auth/category-lookup?type=excluded"
                     className="text-sm text-brand-600 hover:text-brand-700 font-medium"
                   >
                     Browse
@@ -520,13 +490,6 @@ export default function AuthPage() {
             </div>
 
             <div className="flex gap-3">
-              <button
-                onClick={handleSaveSettings}
-                disabled={isLoading}
-                className="rounded-lg bg-green-600 px-6 py-3 text-white font-medium hover:bg-green-700 disabled:bg-gray-400 transition-colors"
-              >
-                {isLoading ? "Saving..." : "Save Settings"}
-              </button>
               <button
                 onClick={handleStartSearch}
                 disabled={isLoading}

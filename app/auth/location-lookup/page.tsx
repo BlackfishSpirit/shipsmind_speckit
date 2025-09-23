@@ -114,28 +114,93 @@ export default function LocationLookupPage() {
     setSelectedLocations(newSelected);
   };
 
-  const handleSaveAndSearchAgain = () => {
-    if (selectedLocations.size === 0) {
-      setError("Please select at least one location");
-      return;
+  const handleSaveAndSearchAgain = async () => {
+    const success = await saveSelectedLocations();
+    if (success) {
+      // Clear selections and search results
+      setSearchTerm("");
+      setResults([]);
+      setSelectedLocations(new Set());
+      setShowResults(false);
+      setMessage('Locations saved successfully! You can search for more locations.');
     }
-
-    setMessage(`Saved ${selectedLocations.size} location(s): ${Array.from(selectedLocations).join(", ")}`);
-    setSearchTerm("");
-    setResults([]);
-    setSelectedLocations(new Set());
-    setShowResults(false);
   };
 
-  const handleSaveAndReturn = () => {
+  const handleSaveAndReturn = async () => {
+    const success = await saveSelectedLocations();
+    if (success) {
+      setMessage('Locations saved successfully! Returning to dashboard...');
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 1500);
+    }
+  };
+
+  const saveSelectedLocations = async () => {
     if (selectedLocations.size === 0) {
-      setError("Please select at least one location");
-      return;
+      setError("Please select at least one location to save.");
+      return false;
     }
 
-    // In a real app, you would save the selected locations and redirect
-    const locationCodes = Array.from(selectedLocations).join(",");
-    window.location.href = `/auth?locations=${encodeURIComponent(locationCodes)}`;
+    setIsLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setError('Please log in first');
+        return false;
+      }
+
+      // Get current serp_locations value
+      const { data: currentData, error: fetchError } = await supabase
+        .from('user_accounts')
+        .select('serp_locations')
+        .eq('uuid', session.user.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching current locations:', fetchError);
+        setError('Failed to fetch current location data.');
+        return false;
+      }
+
+      // Prepare new location codes string
+      const selectedCodes = Array.from(selectedLocations);
+      let newLocationsString = '';
+      const currentLocations = currentData?.serp_locations;
+
+      if (!currentLocations || currentLocations.trim() === '') {
+        // No existing locations, just use new codes
+        newLocationsString = selectedCodes.join(',');
+      } else {
+        // Append new codes to existing ones
+        newLocationsString = currentLocations + ',' + selectedCodes.join(',');
+      }
+
+      // Update the database
+      const { error: updateError } = await supabase
+        .from('user_accounts')
+        .update({ serp_locations: newLocationsString })
+        .eq('uuid', session.user.id);
+
+      if (updateError) {
+        console.error('Error updating locations:', updateError);
+        setError('Failed to save location codes.');
+        return false;
+      }
+
+      return true;
+
+    } catch (error) {
+      console.error('Error saving locations:', error);
+      setError('An error occurred while saving locations.');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -217,17 +282,17 @@ export default function LocationLookupPage() {
         <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
           <button
             onClick={handleSaveAndSearchAgain}
-            disabled={selectedLocations.size === 0}
+            disabled={selectedLocations.size === 0 || isLoading}
             className="rounded-lg bg-brand-600 px-4 py-2 text-white font-medium hover:bg-brand-700 disabled:bg-gray-400 transition-colors"
           >
-            Save & Search Again
+            {isLoading ? "Saving..." : "Save & Search Again"}
           </button>
           <button
             onClick={handleSaveAndReturn}
-            disabled={selectedLocations.size === 0}
+            disabled={selectedLocations.size === 0 || isLoading}
             className="rounded-lg bg-green-600 px-4 py-2 text-white font-medium hover:bg-green-700 disabled:bg-gray-400 transition-colors"
           >
-            Save & Return
+            {isLoading ? "Saving..." : "Save & Return"}
           </button>
           <span className="text-sm text-gray-600">
             Select locations below, then choose a save option

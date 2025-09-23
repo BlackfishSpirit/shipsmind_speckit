@@ -78,7 +78,9 @@
       "mcp__playwright__browser_type",
       "mcp__playwright__browser_console_messages",
       "mcp__supabase__list_tables",
-      "mcp__playwright__browser_evaluate"
+      "mcp__playwright__browser_evaluate",
+      "Read(//c/vscodedev/Github Repos/Wraek/**)",
+      "Read(//c/vscodedev/**)"
     ],
     "deny": [],
     "ask": []

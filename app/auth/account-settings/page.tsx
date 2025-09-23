@@ -21,6 +21,7 @@ export default function AccountSettingsPage() {
 
   // Business profile state
   const [businessName, setBusinessName] = useState("");
+  const [businessAddress, setBusinessAddress] = useState("");
   const [businessStreet, setBusinessStreet] = useState("");
   const [businessCity, setBusinessCity] = useState("");
   const [businessState, setBusinessState] = useState("");
@@ -41,13 +42,81 @@ export default function AccountSettingsPage() {
     setCanChangeEmail(newEmail.length > 0 && verifyEmail.length > 0 && newEmail === verifyEmail);
   }, [newEmail, verifyEmail]);
 
+  // Address parsing function - matches email_site functionality exactly
+  const parseBusinessAddress = (address: string) => {
+    // Parse "420 37th St NW Ste. A. Auburn, WA 98001" format
+    if (!address) return { street: "", city: "", state: "", zip: "" };
+
+    const parts = address.split('. ');
+    if (parts.length < 2) return { street: address, city: "", state: "", zip: "" };
+
+    const street = parts[0];
+    const cityStateZip = parts[1];
+
+    const cityStateZipParts = cityStateZip.split(', ');
+    if (cityStateZipParts.length < 2) return { street, city: "", state: "", zip: "" };
+
+    const city = cityStateZipParts[0];
+    const stateZip = cityStateZipParts[1].split(' ');
+    const state = stateZip[0] || '';
+    const zip = stateZip.slice(1).join(' ') || '';
+
+    return { street, city, state, zip };
+  };
+
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_accounts')
+        .select('*')
+        .eq('uuid', userId)
+        .single();
+
+      if (error) {
+        console.error('Error loading user profile:', error);
+        return;
+      }
+
+      if (data) {
+        // Populate user profile fields - using email_site column names
+        setFirstName(data.user_firstname || "");
+        setLastName(data.user_lastname || "");
+        setPhoneNumber(data.user_phone || "");
+
+        // Populate business profile fields
+        setBusinessName(data.business_name || "");
+        setBusinessUrl(data.business_url || "");
+        setBusinessProfileText(data.business_profile || "");
+
+        // Handle business address - parse if stored as concatenated string
+        if (data.business_address) {
+          setBusinessAddress(data.business_address);
+          const parsed = parseBusinessAddress(data.business_address);
+          setBusinessStreet(parsed.street);
+          setBusinessCity(parsed.city);
+          setBusinessState(parsed.state);
+          setBusinessZip(parsed.zip);
+        } else {
+          // If no concatenated address, leave fields empty since email_site only uses business_address
+          setBusinessStreet("");
+          setBusinessCity("");
+          setBusinessState("");
+          setBusinessZip("");
+          setBusinessAddress("");
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
+
   const checkAuthStatus = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setIsAuthenticated(true);
         setEmail(session.user.email || "");
-        // In a real app, you'd load user profile data here
+        await loadUserProfile(session.user.id);
       } else {
         window.location.href = "/auth";
       }
@@ -66,10 +135,43 @@ export default function AccountSettingsPage() {
     setMessage("");
 
     try {
-      // In a real app, save profile data to database
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setError('Please log in first');
+        return;
+      }
+
+      // Create concatenated business address in email_site format: "Street. City, State Zip"
+      let concatenatedAddress = '';
+      if (businessStreet && businessCity && businessState && businessZip) {
+        concatenatedAddress = `${businessStreet.trim()}. ${businessCity.trim()}, ${businessState.trim()} ${businessZip.trim()}`;
+      }
+
+      const { error } = await supabase
+        .from('user_accounts')
+        .update({
+          user_firstname: firstName.trim() || null,
+          user_lastname: lastName.trim() || null,
+          user_phone: phoneNumber.trim() || null,
+          business_name: businessName.trim() || null,
+          business_address: concatenatedAddress || null,
+          business_url: businessUrl.trim() || null,
+          business_profile: businessProfileText.trim() || null
+        })
+        .eq('uuid', session.user.id);
+
+      if (error) {
+        console.error('Error saving profile:', error);
+        setError('Failed to save profile. Please try again.');
+        return;
+      }
+
+      // Update the business address state to reflect saved value
+      setBusinessAddress(concatenatedAddress);
       setMessage("Profile updated successfully!");
     } catch (error: any) {
-      setError(error.message);
+      console.error('Error saving profile:', error);
+      setError(error.message || 'Failed to save profile. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -79,15 +181,48 @@ export default function AccountSettingsPage() {
     setEmailChangeMessage("");
     setEmailChangeError("");
 
+    // Validation checks matching email_site
+    if (!newEmail.trim()) {
+      setEmailChangeError("Please enter a new email address");
+      return;
+    }
+
+    if (!verifyEmail.trim()) {
+      setEmailChangeError("Please verify your new email address");
+      return;
+    }
+
+    if (newEmail !== verifyEmail) {
+      setEmailChangeError("Email addresses do not match");
+      return;
+    }
+
+    if (newEmail === email) {
+      setEmailChangeError("New email must be different from current email");
+      return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      setEmailChangeError("Please enter a valid email address");
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
       const { error } = await supabase.auth.updateUser({ email: newEmail });
       if (error) throw error;
 
-      setEmailChangeMessage("Check your new email for confirmation link!");
+      setEmailChangeMessage("A confirmation email has been sent to your new email address. Please check your email and click the confirmation link to complete the change.");
       setNewEmail("");
       setVerifyEmail("");
     } catch (error: any) {
-      setEmailChangeError(error.message);
+      console.error('Error changing email:', error);
+      setEmailChangeError(error.message || "Failed to change email. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -96,10 +231,17 @@ export default function AccountSettingsPage() {
     setError("");
     setIsLoading(true);
 
-    if (!businessUrl) {
-      setError("Please enter a business URL first");
+    // Enhanced validation matching email_site
+    if (!businessUrl || !businessUrl.trim()) {
+      setError("Please enter a business website URL first");
       setIsLoading(false);
       return;
+    }
+
+    // URL format validation
+    let urlToUse = businessUrl.trim();
+    if (!urlToUse.startsWith('http://') && !urlToUse.startsWith('https://')) {
+      urlToUse = 'https://' + urlToUse;
     }
 
     try {
@@ -121,7 +263,7 @@ export default function AccountSettingsPage() {
 
       if (accountError || !accountData?.account_number) {
         console.error('Error getting account number:', accountError);
-        setError('Unable to get account number for profile generation.');
+        setError('Unable to get account number for profile generation. Please contact support.');
         setIsLoading(false);
         return;
       }
@@ -130,31 +272,38 @@ export default function AccountSettingsPage() {
       const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/54f613d0-40f2-4f1c-9a8a-70f0ac45416f';
       const params = new URLSearchParams({
         account_number: accountData.account_number,
-        alt_url: ''
+        alt_url: urlToUse
       });
 
       const response = await fetch(`${webhookUrl}?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const responseText = await response.text();
+        console.error('Webhook response error:', responseText);
+        throw new Error(`Profile generation failed (${response.status}). Please try again or contact support.`);
       }
 
-      setMessage('Profile generated successfully!');
+      setMessage('Profile generation started! Please wait while we analyze your website and generate your business profile...');
 
       // Refresh the business profile after webhook
       setTimeout(async () => {
         await refreshBusinessProfile();
-      }, 2000);
+      }, 3000);
 
     } catch (error: any) {
       console.error('Error generating profile:', error);
-      setError('Failed to generate profile. Please try again.');
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        setError('Network error. Please check your internet connection and try again.');
+      } else {
+        setError(error.message || 'Failed to generate profile. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -177,8 +326,11 @@ export default function AccountSettingsPage() {
         return;
       }
 
-      if (data) {
-        setBusinessProfileText(data.business_profile || '');
+      if (data && data.business_profile) {
+        setBusinessProfileText(data.business_profile);
+        setMessage('Business profile generated and updated successfully!');
+      } else {
+        setMessage('Profile generation completed, but the generated content may still be processing. Please refresh the page in a moment to see updates.');
       }
 
     } catch (error) {
@@ -368,11 +520,30 @@ export default function AccountSettingsPage() {
               required
               className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
             />
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Complete Business Address</label>
+              <input
+                type="text"
+                placeholder="Complete business address (auto-generated from fields below)"
+                value={businessAddress}
+                readOnly
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 bg-gray-50 text-gray-700"
+              />
+              <p className="text-xs text-gray-500">This field is automatically generated from the address components below</p>
+            </div>
             <input
               type="text"
               placeholder="Street Address (e.g., 420 37th St NW Ste. A)"
               value={businessStreet}
-              onChange={(e) => setBusinessStreet(e.target.value)}
+              onChange={(e) => {
+                setBusinessStreet(e.target.value);
+                // Update concatenated address in email_site format
+                if (e.target.value && businessCity && businessState && businessZip) {
+                  setBusinessAddress(`${e.target.value.trim()}. ${businessCity.trim()}, ${businessState.trim()} ${businessZip.trim()}`);
+                } else {
+                  setBusinessAddress('');
+                }
+              }}
               required
               className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
             />
@@ -380,7 +551,15 @@ export default function AccountSettingsPage() {
               type="text"
               placeholder="City"
               value={businessCity}
-              onChange={(e) => setBusinessCity(e.target.value)}
+              onChange={(e) => {
+                setBusinessCity(e.target.value);
+                // Update concatenated address in email_site format
+                if (businessStreet && e.target.value && businessState && businessZip) {
+                  setBusinessAddress(`${businessStreet.trim()}. ${e.target.value.trim()}, ${businessState.trim()} ${businessZip.trim()}`);
+                } else {
+                  setBusinessAddress('');
+                }
+              }}
               required
               className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
             />
@@ -389,7 +568,15 @@ export default function AccountSettingsPage() {
                 type="text"
                 placeholder="State/Province/Region"
                 value={businessState}
-                onChange={(e) => setBusinessState(e.target.value)}
+                onChange={(e) => {
+                  setBusinessState(e.target.value);
+                  // Update concatenated address in email_site format
+                  if (businessStreet && businessCity && e.target.value && businessZip) {
+                    setBusinessAddress(`${businessStreet.trim()}. ${businessCity.trim()}, ${e.target.value.trim()} ${businessZip.trim()}`);
+                  } else {
+                    setBusinessAddress('');
+                  }
+                }}
                 required
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
               />
@@ -397,7 +584,15 @@ export default function AccountSettingsPage() {
                 type="text"
                 placeholder="Postal Code"
                 value={businessZip}
-                onChange={(e) => setBusinessZip(e.target.value)}
+                onChange={(e) => {
+                  setBusinessZip(e.target.value);
+                  // Update concatenated address in email_site format
+                  if (businessStreet && businessCity && businessState && e.target.value) {
+                    setBusinessAddress(`${businessStreet.trim()}. ${businessCity.trim()}, ${businessState.trim()} ${e.target.value.trim()}`);
+                  } else {
+                    setBusinessAddress('');
+                  }
+                }}
                 required
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
               />

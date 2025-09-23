@@ -19,6 +19,7 @@ export default function CategoryLookupPage() {
   const [showResults, setShowResults] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [categoryType, setCategoryType] = useState<'included' | 'excluded'>('included');
 
   // Interface for google_categories table structure
   interface GoogleCategory {
@@ -26,9 +27,18 @@ export default function CategoryLookupPage() {
     category_name: string;
   }
 
-  // Check authentication on mount
+  // Check authentication and URL parameters on mount
   useEffect(() => {
     checkAuthStatus();
+
+    // Read URL parameter to determine category type
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    if (type === 'excluded') {
+      setCategoryType('excluded');
+    } else {
+      setCategoryType('included');
+    }
   }, []);
 
   const checkAuthStatus = async () => {
@@ -107,48 +117,111 @@ export default function CategoryLookupPage() {
     if (selectedCategories.size === results.length) {
       setSelectedCategories(new Set());
     } else {
-      setSelectedCategories(new Set(results.map(r => r.code)));
+      setSelectedCategories(new Set(results.map(r => r.name)));
     }
   };
 
-  const handleCategoryToggle = (code: string) => {
+  const handleCategoryToggle = (name: string) => {
     const newSelected = new Set(selectedCategories);
-    if (newSelected.has(code)) {
-      newSelected.delete(code);
+    if (newSelected.has(name)) {
+      newSelected.delete(name);
     } else {
-      newSelected.add(code);
+      newSelected.add(name);
     }
     setSelectedCategories(newSelected);
   };
 
-  const handleSaveAndSearchAgain = () => {
-    if (selectedCategories.size === 0) {
-      setError("Please select at least one category");
-      return;
+  const handleSaveAndSearchAgain = async () => {
+    const success = await saveSelectedCategories();
+    if (success) {
+      // Clear selections and search results
+      setSearchTerm("");
+      setResults([]);
+      setSelectedCategories(new Set());
+      setShowResults(false);
+      setMessage('Categories saved successfully! You can search for more categories.');
     }
-
-    setMessage(`Saved ${selectedCategories.size} category(ies): ${Array.from(selectedCategories).join(", ")}`);
-    setSearchTerm("");
-    setResults([]);
-    setSelectedCategories(new Set());
-    setShowResults(false);
   };
 
-  const handleSaveAndReturn = () => {
+  const handleSaveAndReturn = async () => {
+    const success = await saveSelectedCategories();
+    if (success) {
+      setMessage('Categories saved successfully! Returning to dashboard...');
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 1500);
+    }
+  };
+
+  const saveSelectedCategories = async () => {
     if (selectedCategories.size === 0) {
-      setError("Please select at least one category");
-      return;
+      setError("Please select at least one category to save.");
+      return false;
     }
 
-    // Get selected category codes and names for better UX
-    const selectedCategoryData = results.filter(cat => selectedCategories.has(cat.code));
-    const categoryCodes = selectedCategoryData.map(cat => cat.code).join(",");
+    setIsLoading(true);
+    setError("");
+    setMessage("");
 
-    // Store in localStorage for the main page to pick up
-    localStorage.setItem('selectedCategories', categoryCodes);
+    try {
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setError('Please log in first');
+        return false;
+      }
 
-    // Redirect back to main auth page
-    window.location.href = "/auth";
+      // Determine which column to update based on category type
+      const columnName = categoryType === 'excluded' ? 'serp_exc_cat' : 'serp_cat';
+
+      // Get current category value
+      const { data: currentData, error: fetchError } = await supabase
+        .from('user_accounts')
+        .select(columnName)
+        .eq('uuid', session.user.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching current categories:', fetchError);
+        setError('Failed to fetch current category data.');
+        return false;
+      }
+
+      // Prepare new category names string
+      const selectedNames = Array.from(selectedCategories);
+      let newCategoriesString = '';
+      const currentCategories = currentData?.[columnName];
+
+      if (!currentCategories || currentCategories.trim() === '') {
+        // No existing categories, just use new names
+        newCategoriesString = selectedNames.join(',');
+      } else {
+        // Append new names to existing ones
+        newCategoriesString = currentCategories + ',' + selectedNames.join(',');
+      }
+
+      // Update the database
+      const updateData = { [columnName]: newCategoriesString };
+      const { error: updateError } = await supabase
+        .from('user_accounts')
+        .update(updateData)
+        .eq('uuid', session.user.id);
+
+      if (updateError) {
+        console.error('Error updating categories:', updateError);
+        setError('Failed to save category codes.');
+        return false;
+      }
+
+      return true;
+
+    } catch (error) {
+      console.error('Error saving categories:', error);
+      setError('An error occurred while saving categories.');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleClose = () => {
@@ -171,7 +244,9 @@ export default function CategoryLookupPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 pb-4">
-        <h2 className="text-2xl font-bold text-gray-900">Category Lookup</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {categoryType === 'excluded' ? 'Excluded Categories Lookup' : 'Categories Lookup'}
+        </h2>
         <div className="flex items-center space-x-4">
           <Link
             href="/auth"
@@ -230,20 +305,20 @@ export default function CategoryLookupPage() {
         <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
           <button
             onClick={handleSaveAndSearchAgain}
-            disabled={selectedCategories.size === 0}
+            disabled={selectedCategories.size === 0 || isLoading}
             className="rounded-lg bg-brand-600 px-4 py-2 text-white font-medium hover:bg-brand-700 disabled:bg-gray-400 transition-colors"
           >
-            Save & Search Again
+            {isLoading ? "Saving..." : "Save & Search Again"}
           </button>
           <button
             onClick={handleSaveAndReturn}
-            disabled={selectedCategories.size === 0}
+            disabled={selectedCategories.size === 0 || isLoading}
             className="rounded-lg bg-green-600 px-4 py-2 text-white font-medium hover:bg-green-700 disabled:bg-gray-400 transition-colors"
           >
-            Save & Return
+            {isLoading ? "Saving..." : "Save & Return"}
           </button>
           <span className="text-sm text-gray-600">
-            Select categories below, then choose a save option
+            Select {categoryType === 'excluded' ? 'excluded ' : ''}categories below, then choose a save option
           </span>
         </div>
       )}
@@ -276,9 +351,6 @@ export default function CategoryLookupPage() {
                     />
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                    Category Code
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-900">
                     Category Name
                   </th>
                 </tr>
@@ -286,21 +358,18 @@ export default function CategoryLookupPage() {
               <tbody className="divide-y divide-gray-200">
                 {results.map((category) => (
                   <tr
-                    key={category.code}
+                    key={category.name}
                     className={`hover:bg-gray-50 ${
-                      selectedCategories.has(category.code) ? "bg-blue-50" : ""
+                      selectedCategories.has(category.name) ? "bg-blue-50" : ""
                     }`}
                   >
                     <td className="px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        checked={selectedCategories.has(category.code)}
-                        onChange={() => handleCategoryToggle(category.code)}
+                        checked={selectedCategories.has(category.name)}
+                        onChange={() => handleCategoryToggle(category.name)}
                         className="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
                       />
-                    </td>
-                    <td className="px-4 py-3 font-mono text-sm text-gray-900">
-                      {category.code}
                     </td>
                     <td className="px-4 py-3 text-gray-900">
                       {category.name}
