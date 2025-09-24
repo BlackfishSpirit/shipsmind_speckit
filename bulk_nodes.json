@@ -1,0 +1,117 @@
+{
+  "new_nodes": [
+    {
+      "parameters": {
+        "path": "bulk-leads",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-2624, -400],
+      "id": "bulk-webhook-123",
+      "name": "Bulk Leads Webhook",
+      "webhookId": "bulk-leads-webhook-123"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "lead-ids-assignment",
+              "name": "lead_ids",
+              "value": "={{ $json.query.lead_ids }}",
+              "type": "object"
+            },
+            {
+              "id": "account-num-assignment",
+              "name": "account_number",
+              "value": "={{ $json.query.account_number }}",
+              "type": "number"
+            },
+            {
+              "id": "email-count-assignment",
+              "name": "email_count",
+              "value": "={{ $json.query.email_count }}",
+              "type": "number"
+            },
+            {
+              "id": "include-sig-assignment",
+              "name": "include_sig",
+              "value": "={{ $json.query.include_sig }}",
+              "type": "boolean"
+            },
+            {
+              "id": "include-unsub-assignment",
+              "name": "include_unsub",
+              "value": "={{ $json.query.include_unsub }}",
+              "type": "boolean"
+            },
+            {
+              "id": "email-region-assignment",
+              "name": "email_region",
+              "value": "={{ $json.query.email_region?.trim() || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "user-token-assignment",
+              "name": "user_token",
+              "value": "={{ $json.headers.authorization?.replace('Bearer ', '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-2400, -400],
+      "id": "bulk-config-123",
+      "name": "Bulk Config"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT id, cid, Title, URL, Address, gen_profile, created_at, updated_at FROM serp_leads_v2 WHERE id IN ({{ $json.lead_ids.map((id, pos) => '$' + (pos+1)).join(', ') }})",
+        "additionalFields": {
+          "queryParameters": "={{ $json.lead_ids }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [-2100, -400],
+      "id": "bulk-postgres-123",
+      "name": "Get Bulk Leads",
+      "credentials": {
+        "postgres": {
+          "id": "postgres-main",
+          "name": "Main Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform PostgreSQL results for bulk processing\nconst configData = items[0].json;\nconst leadsData = items[1].json;\n\n// Transform each lead with config data\nconst transformedLeads = leadsData.map(lead => ({\n  json: {\n    // Config fields\n    account_number: configData.account_number,\n    email_count: configData.email_count,\n    include_sig: configData.include_sig,\n    include_unsub: configData.include_unsub,\n    email_region: configData.email_region,\n    user_token: configData.user_token,\n    \n    // Lead-specific fields (matching existing workflow format)\n    id: lead.id,\n    cid: lead.cid,\n    Title: lead.title || lead.Title,\n    URL: lead.url || lead.URL,\n    Address: lead.address || lead.Address,\n    gen_profile: lead.gen_profile || '',\n    created_at: lead.created_at,\n    updated_at: lead.updated_at\n  }\n}));\n\nreturn transformedLeads;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1800, -400],
+      "id": "bulk-transform-123",
+      "name": "Transform Bulk Data"
+    }
+  ],
+  "new_connections": {
+    "Bulk Leads Webhook": {
+      "main": [[{"node": "Bulk Config", "type": "main", "index": 0}]]
+    },
+    "Bulk Config": {
+      "main": [[{"node": "Get Bulk Leads", "type": "main", "index": 0}]]
+    },
+    "Get Bulk Leads": {
+      "main": [[{"node": "Transform Bulk Data", "type": "main", "index": 0}]]
+    },
+    "Transform Bulk Data": {
+      "main": [[{"node": "Get a row", "type": "main", "index": 0}]]
+    }
+  }
+}
