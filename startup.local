@@ -26,7 +26,7 @@
 
 ### 4. MCP Server Status
 - Command: `claude mcp list`
-- Expected ALL connected (7 total):
+- Expected ALL connected (8 total):
   - ✓ playwright: Browser automation & testing
   - ✓ context7: Up-to-date documentation
   - ✓ github: GitHub repository integration
@@ -34,6 +34,7 @@
   - ✓ linear: Linear project management
   - ✓ semgrep: Security vulnerability scanning
   - ✓ supabase: Backend database integration
+  - ✓ n8n: Workflow automation management
 - If any fail: Check API keys and package installations
 
 ## STARTUP SEQUENCE
@@ -67,7 +68,7 @@
 5. **Verify MCP Servers**
    ```bash
    claude mcp list
-   # All 7 servers should show ✓ Connected
+   # All 8 servers should show ✓ Connected
    ```
 
 ## SERVICE URLS FOR VERIFICATION
@@ -85,6 +86,8 @@ Required in .env.local:
 - DATABASE_URL (PostgreSQL connection)
 - LINEAR_API_KEY (for Linear MCP server)
 - SUPABASE_ACCESS_TOKEN (for Supabase MCP server)
+- N8N_API_URL (for n8n MCP server workflow management)
+- N8N_API_KEY (for n8n MCP server authentication)
 
 ## USER CONTEXT
 
@@ -123,8 +126,9 @@ pnpm db:push
 
 ✅ All Docker containers healthy and running
 ✅ Development server responding with HTTP 200
-✅ All 7 MCP servers connected
+✅ All 8 MCP servers connected
 ✅ No critical compilation errors
 ✅ Database accessible on port 5433
+✅ n8n API connection verified (workflow management enabled)
 
 When all criteria met, development environment is ready.

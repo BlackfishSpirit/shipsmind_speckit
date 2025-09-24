@@ -25,6 +25,14 @@ The Semgrep MCP server provides security scanning capabilities using Semgrep's r
       "env": {
         "SUPABASE_ACCESS_TOKEN": "sbp_c7fb3eeec77571288b6741237e9a0519d97d448f"
       }
+    },
+    "n8n": {
+      "command": "npx",
+      "args": ["n8n-mcp"],
+      "env": {
+        "N8N_API_URL": "https://blackfish.app.n8n.cloud/api/v1",
+        "N8N_API_KEY": "your_n8n_api_key"
+      }
     }
   }
 }
@@ -66,6 +74,41 @@ The Supabase MCP server enables:
 - Data modeling and relationship understanding
 - Backend API development guidance
 - Database migration planning
+
+### n8n Workflow Automation Integration
+
+The n8n MCP server provides access to n8n workflow automation documentation and templates.
+
+#### Features:
+- Access to 2,500+ n8n workflow templates
+- n8n node documentation and examples
+- Workflow automation guidance
+- Integration patterns and best practices
+- Full-text search across n8n documentation
+
+#### Usage:
+The n8n MCP server enables:
+- **Full Workflow Management**: Create, read, update, and delete n8n workflows
+- **Live API Integration**: Direct connection to your n8n instance
+- **Template Access**: Search 2,500+ n8n workflow templates
+- **Node Documentation**: Get help with n8n node configuration
+- **Execution Control**: Start, stop, and monitor workflow executions
+- **Credential Management**: Manage n8n credentials and connections
+
+#### API Configuration:
+Set these environment variables in your `.env.local`:
+```bash
+N8N_API_URL=https://your-n8n-instance.com/api/v1
+N8N_API_KEY=your_n8n_api_key
+```
+
+#### Example Workflow Management:
+- List all workflows in your n8n instance
+- Create new workflows with nodes and connections
+- Execute workflows and monitor their status
+- Update existing workflow configurations
+- Search and import workflow templates
+- Manage webhook endpoints and triggers
 
 ## Security Review Agent Configuration
 
