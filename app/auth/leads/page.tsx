@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface SerpLead {
+  id?: string;
   title?: string;
   address?: string;
   phone?: string;
@@ -27,6 +30,8 @@ export default function LeadsPage() {
   const [recordsPerPage, setRecordsPerPage] = useState(50);
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [addressSearch, setAddressSearch] = useState("");
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     checkAuthStatus();
@@ -37,7 +42,7 @@ export default function LeadsPage() {
       setCurrentPage(1);
       loadLeads();
     }
-  }, [isAuthenticated, showWithoutEmails, recordsPerPage]);
+  }, [isAuthenticated, showWithoutEmails, recordsPerPage, addressSearch]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -77,6 +82,10 @@ export default function LeadsPage() {
           .neq('email', 'EmailNotFound');
       }
 
+      if (addressSearch.trim()) {
+        countQuery = countQuery.ilike('address', `%${addressSearch.trim()}%`);
+      }
+
       const { count, error: countError } = await countQuery;
 
       if (countError) {
@@ -95,13 +104,17 @@ export default function LeadsPage() {
 
       let dataQuery = supabase
         .from('serp_leads_v2')
-        .select('title, address, phone, url, email, facebook_url, instagram_url, categories')
+        .select('id, title, address, phone, url, email, facebook_url, instagram_url, categories')
         .range(from, to);
 
       if (!showWithoutEmails) {
         dataQuery = dataQuery
           .not('email', 'is', null)
           .neq('email', 'EmailNotFound');
+      }
+
+      if (addressSearch.trim()) {
+        dataQuery = dataQuery.ilike('address', `%${addressSearch.trim()}%`);
       }
 
       const { data, error: fetchError } = await dataQuery;
@@ -126,6 +139,51 @@ export default function LeadsPage() {
     if (!error) {
       window.location.href = "/auth";
     }
+  };
+
+  const handleSelectLead = (leadId: string, hasEmail: boolean) => {
+    if (!hasEmail) return; // Cannot select leads without email
+
+    setSelectedLeads(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(leadId)) {
+        newSelection.delete(leadId);
+      } else {
+        newSelection.add(leadId);
+      }
+      return newSelection;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const leadsWithEmail = leads.filter(lead => lead.email && lead.email !== 'EmailNotFound');
+    const allSelected = leadsWithEmail.every(lead => selectedLeads.has(lead.id || `${lead.title}-${lead.email}`));
+
+    if (allSelected) {
+      // Deselect all
+      setSelectedLeads(new Set());
+    } else {
+      // Select all leads with email
+      const newSelection = new Set(selectedLeads);
+      leadsWithEmail.forEach(lead => {
+        newSelection.add(lead.id || `${lead.title}-${lead.email}`);
+      });
+      setSelectedLeads(newSelection);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedLeads(new Set());
+  };
+
+  // Helper function to get unique identifier for lead
+  const getLeadId = (lead: SerpLead, index: number) => {
+    return lead.id || `${lead.title}-${lead.email}-${index}`;
+  };
+
+  // Helper function to check if lead has valid email
+  const hasValidEmail = (lead: SerpLead) => {
+    return lead.email && lead.email !== 'EmailNotFound';
   };
 
 
@@ -168,8 +226,24 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {/* Filter Controls */}
-      <div className="bg-gray-50 rounded-lg p-4">
+      {/* Search and Filter Controls */}
+      <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+        {/* Address Search */}
+        <div>
+          <label htmlFor="address-search" className="text-sm font-medium text-gray-700 mb-2 block">
+            Search by Address
+          </label>
+          <Input
+            id="address-search"
+            type="text"
+            placeholder="Enter address to search..."
+            value={addressSearch}
+            onChange={(e) => setAddressSearch(e.target.value)}
+            className="w-full max-w-md"
+          />
+        </div>
+
+        {/* Filter Controls */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <input
@@ -200,10 +274,46 @@ export default function LeadsPage() {
             </select>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
-          When unchecked, only shows leads with valid email addresses
+        <p className="text-xs text-gray-500">
+          When unchecked, only shows leads with valid email addresses. Use address search to filter by location.
         </p>
       </div>
+
+      {/* Selection Controls */}
+      {leads.some(lead => hasValidEmail(lead)) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleSelectAll}
+                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                {leads.filter(lead => hasValidEmail(lead)).every(lead =>
+                  selectedLeads.has(getLeadId(lead, leads.indexOf(lead)))
+                ) ? 'Deselect All' : 'Select All'} with Email
+              </button>
+              {selectedLeads.size > 0 && (
+                <button
+                  onClick={clearSelection}
+                  className="text-sm font-medium text-gray-600 hover:text-gray-700"
+                >
+                  Clear Selection
+                </button>
+              )}
+            </div>
+            <div className="text-sm text-gray-700">
+              <strong>{selectedLeads.size}</strong> leads selected
+            </div>
+          </div>
+          {selectedLeads.size > 0 && (
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <p className="text-sm text-blue-700">
+                💡 Selected leads can be exported or used for email campaigns (feature coming soon)
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Leads Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -233,6 +343,9 @@ export default function LeadsPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-4 py-3 text-center font-semibold text-gray-900 w-12">
+                    Select
+                  </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
                     Title
                   </th>
@@ -243,10 +356,10 @@ export default function LeadsPage() {
                     Phone
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                    Website
+                    Email
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                    Email
+                    Website
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
                     Social Media
@@ -257,11 +370,27 @@ export default function LeadsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {leads.map((lead, index) => (
-                  <tr key={`${lead.title}-${lead.email}-${index}`} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {lead.title || '-'}
-                    </td>
+                {leads.map((lead, index) => {
+                  const leadId = getLeadId(lead, index);
+                  const hasEmail = hasValidEmail(lead);
+                  const isSelected = selectedLeads.has(leadId);
+
+                  return (
+                    <tr
+                      key={leadId}
+                      className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''} ${!hasEmail ? 'opacity-75' : ''}`}
+                    >
+                      <td className="px-4 py-3 text-center">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => handleSelectLead(leadId, hasEmail)}
+                          disabled={!hasEmail}
+                          className="mx-auto"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {lead.title || '-'}
+                      </td>
                     <td className="px-4 py-3 text-sm text-gray-900">
                       {lead.address || '-'}
                     </td>
@@ -278,6 +407,18 @@ export default function LeadsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm">
+                      {lead.email && lead.email !== 'EmailNotFound' ? (
+                        <a
+                          href={`mailto:${lead.email}`}
+                          className="text-brand-600 hover:text-brand-700"
+                        >
+                          {lead.email}
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">No email</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
                       {lead.url ? (
                         <a
                           href={lead.url.startsWith('http') ? lead.url : `https://${lead.url}`}
@@ -289,18 +430,6 @@ export default function LeadsPage() {
                         </a>
                       ) : (
                         '-'
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {lead.email && lead.email !== 'EmailNotFound' ? (
-                        <a
-                          href={`mailto:${lead.email}`}
-                          className="text-brand-600 hover:text-brand-700"
-                        >
-                          {lead.email}
-                        </a>
-                      ) : (
-                        <span className="text-gray-400">No email</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -333,8 +462,9 @@ export default function LeadsPage() {
                     <td className="px-4 py-3 text-sm text-gray-900">
                       {lead.categories || '-'}
                     </td>
-                  </tr>
-                ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

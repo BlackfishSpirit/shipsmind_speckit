@@ -400,6 +400,12 @@ export default function AccountSettingsPage() {
         <h2 className="text-2xl font-bold text-gray-900">Account Settings</h2>
         <div className="flex items-center space-x-4">
           <Link
+            href="/auth/email-settings"
+            className="text-brand-600 hover:text-brand-700 font-medium"
+          >
+            Email Settings
+          </Link>
+          <Link
             href="/auth"
             className="text-brand-600 hover:text-brand-700 font-medium"
           >
