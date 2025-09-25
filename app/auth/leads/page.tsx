@@ -89,11 +89,15 @@ export default function LeadsPage() {
 
   // Helper function to get excluded lead IDs
   const getExcludedLeadIds = async () => {
+    console.log('getExcludedLeadIds called with:', { showEmailedLeads, accountNumber });
+
     if (showEmailedLeads || !accountNumber) {
+      console.log('Returning empty array - showEmailedLeads or no accountNumber');
       return [];
     }
 
     try {
+      console.log('Querying email_drafts for user_id:', accountNumber);
       const { data: draftIds, error: draftError } = await supabase
         .from('email_drafts')
         .select('lead_id')
@@ -101,12 +105,16 @@ export default function LeadsPage() {
 
       if (draftError) {
         console.error('Error fetching draft IDs:', draftError);
+        console.error('Draft error object keys:', Object.keys(draftError));
+        console.error('Full draft error object:', JSON.stringify(draftError, null, 2));
         return [];
       }
 
-      return (draftIds || []).map(d => d.lead_id);
+      const leadIds = (draftIds || []).map(d => d.lead_id).filter(id => id);
+      console.log('Found excluded lead IDs:', leadIds.length, 'drafts');
+      return leadIds;
     } catch (error) {
-      console.error('Error in getExcludedLeadIds:', error);
+      console.error('Error in getExcludedLeadIds (catch):', error);
       return [];
     }
   };
@@ -133,7 +141,15 @@ export default function LeadsPage() {
 
       // Apply excluded leads filter
       if (excludedLeadIds.length > 0) {
-        countQuery = countQuery.not('id', 'in', excludedLeadIds);
+        console.log('Applying excluded leads filter:', excludedLeadIds.slice(0, 5), '(showing first 5)');
+        console.log('Excluded IDs types:', excludedLeadIds.slice(0, 3).map(id => typeof id));
+
+        // Ensure all IDs are valid and format them properly for Supabase
+        const validExcludedIds = excludedLeadIds.filter(id => id && (typeof id === 'string' || typeof id === 'number'));
+        if (validExcludedIds.length > 0) {
+          // Use .not().in() syntax for proper array formatting
+          countQuery = countQuery.not('id', 'in', `(${validExcludedIds.join(',')})`);
+        }
       }
 
       // Apply address search filter
@@ -145,13 +161,33 @@ export default function LeadsPage() {
 
       if (countError) {
         console.error('Error getting record count:', countError);
+        console.error('Error object keys:', Object.keys(countError));
+        console.error('Error object type:', typeof countError);
+        console.error('Full error object:', JSON.stringify(countError, null, 2));
         console.error('Count query details:', {
           showWithoutEmails,
           showEmailedLeads,
           accountNumber,
-          addressSearch: addressSearch.trim()
+          addressSearch: addressSearch.trim(),
+          excludedLeadIds: excludedLeadIds.length
         });
-        const errorMessage = countError.message || countError.error_description || JSON.stringify(countError);
+
+        // Try different error message extraction methods
+        let errorMessage = 'Unknown error';
+        if (countError.message) {
+          errorMessage = countError.message;
+        } else if (countError.error_description) {
+          errorMessage = countError.error_description;
+        } else if (countError.details) {
+          errorMessage = countError.details;
+        } else if (countError.hint) {
+          errorMessage = countError.hint;
+        } else if (countError.code) {
+          errorMessage = `Error code: ${countError.code}`;
+        } else {
+          errorMessage = JSON.stringify(countError);
+        }
+
         setError(`Failed to get record count: ${errorMessage}. Please try again.`);
         return;
       }
@@ -178,7 +214,12 @@ export default function LeadsPage() {
 
       // Apply excluded leads filter (reuse the same excluded IDs)
       if (excludedLeadIds.length > 0) {
-        dataQuery = dataQuery.not('id', 'in', excludedLeadIds);
+        // Ensure all IDs are valid and format them properly for Supabase (same as count query)
+        const validExcludedIds = excludedLeadIds.filter(id => id && (typeof id === 'string' || typeof id === 'number'));
+        if (validExcludedIds.length > 0) {
+          // Use .not().in() syntax for proper array formatting
+          dataQuery = dataQuery.not('id', 'in', `(${validExcludedIds.join(',')})`);
+        }
       }
 
       // Apply address search filter
@@ -193,15 +234,36 @@ export default function LeadsPage() {
 
       if (fetchError) {
         console.error('Error loading leads:', fetchError);
+        console.error('Data error object keys:', Object.keys(fetchError));
+        console.error('Data error object type:', typeof fetchError);
+        console.error('Full data error object:', JSON.stringify(fetchError, null, 2));
         console.error('Data query details:', {
           showWithoutEmails,
           showEmailedLeads,
           accountNumber,
           addressSearch: addressSearch.trim(),
           currentPage,
-          recordsPerPage
+          recordsPerPage,
+          excludedLeadIds: excludedLeadIds.length
         });
-        setError(`Failed to load leads: ${fetchError.message}. Please try again.`);
+
+        // Try different error message extraction methods
+        let errorMessage = 'Unknown error';
+        if (fetchError.message) {
+          errorMessage = fetchError.message;
+        } else if (fetchError.error_description) {
+          errorMessage = fetchError.error_description;
+        } else if (fetchError.details) {
+          errorMessage = fetchError.details;
+        } else if (fetchError.hint) {
+          errorMessage = fetchError.hint;
+        } else if (fetchError.code) {
+          errorMessage = `Error code: ${fetchError.code}`;
+        } else {
+          errorMessage = JSON.stringify(fetchError);
+        }
+
+        setError(`Failed to load leads: ${errorMessage}. Please try again.`);
         return;
       }
 
