@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
 interface SerpLead {
   id?: string;
@@ -24,8 +25,10 @@ export default function LeadsPage() {
   const [error, setError] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [userAccountNumber, setUserAccountNumber] = useState<number | null>(null);
   const [leads, setLeads] = useState<SerpLead[]>([]);
   const [showWithoutEmails, setShowWithoutEmails] = useState(false);
+  const [showEmailedLeads, setShowEmailedLeads] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(50);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -42,7 +45,7 @@ export default function LeadsPage() {
       setCurrentPage(1);
       loadLeads();
     }
-  }, [isAuthenticated, showWithoutEmails, recordsPerPage, addressSearch]);
+  }, [isAuthenticated, showWithoutEmails, showEmailedLeads, recordsPerPage, addressSearch, userAccountNumber]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -55,6 +58,17 @@ export default function LeadsPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setIsAuthenticated(true);
+
+        // Get user's account number
+        const { data: userData, error: userError } = await supabase
+          .from('user_accounts')
+          .select('account_number')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!userError && userData) {
+          setUserAccountNumber(userData.account_number);
+        }
       } else {
         window.location.href = "/auth";
       }
@@ -80,6 +94,16 @@ export default function LeadsPage() {
         countQuery = countQuery
           .not('email', 'is', null)
           .neq('email', 'EmailNotFound');
+      }
+
+      if (!showEmailedLeads && userAccountNumber) {
+        countQuery = countQuery
+          .not('id', 'in',
+            supabase
+              .from('email_drafts')
+              .select('lead_id')
+              .eq('user_id', userAccountNumber)
+          );
       }
 
       if (addressSearch.trim()) {
@@ -111,6 +135,16 @@ export default function LeadsPage() {
         dataQuery = dataQuery
           .not('email', 'is', null)
           .neq('email', 'EmailNotFound');
+      }
+
+      if (!showEmailedLeads && userAccountNumber) {
+        dataQuery = dataQuery
+          .not('id', 'in',
+            supabase
+              .from('email_drafts')
+              .select('lead_id')
+              .eq('user_id', userAccountNumber)
+          );
       }
 
       if (addressSearch.trim()) {
@@ -176,14 +210,24 @@ export default function LeadsPage() {
     setSelectedLeads(new Set());
   };
 
+  const handleGenerateEmails = () => {
+    if (selectedLeads.size === 0) {
+      alert('Please select leads first');
+      return;
+    }
+
+    // Placeholder for email generation functionality
+    alert(`Generate emails for ${selectedLeads.size} selected leads - Feature coming soon!`);
+  };
+
   // Helper function to get unique identifier for lead
   const getLeadId = (lead: SerpLead, index: number) => {
     return lead.id || `${lead.title}-${lead.email}-${index}`;
   };
 
   // Helper function to check if lead has valid email
-  const hasValidEmail = (lead: SerpLead) => {
-    return lead.email && lead.email !== 'EmailNotFound';
+  const hasValidEmail = (lead: SerpLead): boolean => {
+    return !!(lead.email && lead.email !== 'EmailNotFound');
   };
 
 
@@ -245,17 +289,31 @@ export default function LeadsPage() {
 
         {/* Filter Controls */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <input
-              type="checkbox"
-              id="show-without-emails"
-              checked={showWithoutEmails}
-              onChange={(e) => setShowWithoutEmails(e.target.checked)}
-              className="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
-            />
-            <label htmlFor="show-without-emails" className="text-sm font-medium text-gray-700">
-              Show entries without email addresses
-            </label>
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                id="show-without-emails"
+                checked={showWithoutEmails}
+                onChange={(e) => setShowWithoutEmails(e.target.checked)}
+                className="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
+              />
+              <label htmlFor="show-without-emails" className="text-sm font-medium text-gray-700">
+                Show entries without email addresses
+              </label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                id="show-emailed-leads"
+                checked={showEmailedLeads}
+                onChange={(e) => setShowEmailedLeads(e.target.checked)}
+                className="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
+              />
+              <label htmlFor="show-emailed-leads" className="text-sm font-medium text-gray-700">
+                Show leads that already have drafted emails
+              </label>
+            </div>
           </div>
           <div className="flex items-center space-x-3">
             <label htmlFor="records-per-page" className="text-sm font-medium text-gray-700">
@@ -275,7 +333,7 @@ export default function LeadsPage() {
           </div>
         </div>
         <p className="text-xs text-gray-500">
-          When unchecked, only shows leads with valid email addresses. Use address search to filter by location.
+          When unchecked, only shows leads with valid email addresses. Use address search to filter by location. By default, hides leads you've already generated emails for.
         </p>
       </div>
 
@@ -300,18 +358,20 @@ export default function LeadsPage() {
                   Clear Selection
                 </button>
               )}
+              {selectedLeads.size > 0 && (
+                <Button
+                  onClick={handleGenerateEmails}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  size="sm"
+                >
+                  Generate Emails ({selectedLeads.size})
+                </Button>
+              )}
             </div>
             <div className="text-sm text-gray-700">
               <strong>{selectedLeads.size}</strong> leads selected
             </div>
           </div>
-          {selectedLeads.size > 0 && (
-            <div className="mt-3 pt-3 border-t border-blue-200">
-              <p className="text-sm text-blue-700">
-                💡 Selected leads can be exported or used for email campaigns (feature coming soon)
-              </p>
-            </div>
-          )}
         </div>
       )}
 
@@ -383,7 +443,11 @@ export default function LeadsPage() {
                       <td className="px-4 py-3 text-center">
                         <Checkbox
                           checked={isSelected}
-                          onCheckedChange={() => handleSelectLead(leadId, hasEmail)}
+                          onCheckedChange={(checked) => {
+                            if (typeof checked === 'boolean') {
+                              handleSelectLead(leadId, hasEmail);
+                            }
+                          }}
                           disabled={!hasEmail}
                           className="mx-auto"
                         />
