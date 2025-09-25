@@ -210,14 +210,55 @@ export default function LeadsPage() {
     setSelectedLeads(new Set());
   };
 
-  const handleGenerateEmails = () => {
+  const handleGenerateEmails = async () => {
     if (selectedLeads.size === 0) {
       alert('Please select leads first');
       return;
     }
 
-    // Placeholder for email generation functionality
-    alert(`Generate emails for ${selectedLeads.size} selected leads - Feature coming soon!`);
+    if (!userAccountNumber) {
+      alert('User account number not available');
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('User not authenticated');
+        return;
+      }
+
+      // Convert selected lead IDs to array and join as comma-separated string
+      const leadAccountsArray = Array.from(selectedLeads);
+
+      const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/6c29bbd1-5fce-4106-be67-33a810a506da';
+      const params = new URLSearchParams({
+        account_number: userAccountNumber.toString(),
+        lead_accounts: leadAccountsArray.join(',')
+      });
+
+      const response = await fetch(`${webhookUrl}?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const responseText = await response.text();
+      alert(responseText || `Email generation started for ${selectedLeads.size} leads!`);
+
+      // Clear selection after successful request
+      setSelectedLeads(new Set());
+
+    } catch (error: any) {
+      console.error('Error generating emails:', error);
+      alert(`Error generating emails: ${error.message}`);
+    }
   };
 
   // Helper function to get unique identifier for lead
