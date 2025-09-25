@@ -25,7 +25,7 @@ export default function LeadsPage() {
   const [error, setError] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
-  const [userAccountNumber, setUserAccountNumber] = useState<number | null>(null);
+  const [accountNumber, setAccountNumber] = useState<number | null>(null);
   const [leads, setLeads] = useState<SerpLead[]>([]);
   const [showWithoutEmails, setShowWithoutEmails] = useState(false);
   const [showEmailedLeads, setShowEmailedLeads] = useState(false);
@@ -45,7 +45,7 @@ export default function LeadsPage() {
       setCurrentPage(1);
       loadLeads();
     }
-  }, [isAuthenticated, showWithoutEmails, showEmailedLeads, recordsPerPage, addressSearch, userAccountNumber]);
+  }, [isAuthenticated, showWithoutEmails, showEmailedLeads, recordsPerPage, addressSearch, accountNumber]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -60,14 +60,21 @@ export default function LeadsPage() {
         setIsAuthenticated(true);
 
         // Get user's account number
+        console.log('Fetching account for user ID:', session.user.id);
         const { data: userData, error: userError } = await supabase
           .from('user_accounts')
           .select('account_number')
-          .eq('id', session.user.id)
+          .eq('uuid', session.user.id)
           .single();
 
-        if (!userError && userData) {
-          setUserAccountNumber(userData.account_number);
+        if (userError) {
+          console.error('Error loading user account on init:', userError);
+          console.error('User ID:', session.user.id);
+        } else if (userData) {
+          console.log('Account data loaded:', userData);
+          setAccountNumber(userData.account_number);
+        } else {
+          console.error('No account data returned for user:', session.user.id);
         }
       } else {
         window.location.href = "/auth";
@@ -80,32 +87,56 @@ export default function LeadsPage() {
     }
   };
 
+  // Helper function to get excluded lead IDs
+  const getExcludedLeadIds = async () => {
+    if (showEmailedLeads || !accountNumber) {
+      return [];
+    }
+
+    try {
+      const { data: draftIds, error: draftError } = await supabase
+        .from('email_drafts')
+        .select('lead_id')
+        .eq('user_id', accountNumber);
+
+      if (draftError) {
+        console.error('Error fetching draft IDs:', draftError);
+        return [];
+      }
+
+      return (draftIds || []).map(d => d.lead_id);
+    } catch (error) {
+      console.error('Error in getExcludedLeadIds:', error);
+      return [];
+    }
+  };
+
   const loadLeads = async () => {
     setIsLoading(true);
     setError("");
 
     try {
-      // First, get the total count
+      // Get excluded lead IDs first
+      const excludedLeadIds = await getExcludedLeadIds();
+
+      // Build the count query
       let countQuery = supabase
         .from('serp_leads_v2')
         .select('*', { count: 'exact', head: true });
 
+      // Apply email filter
       if (!showWithoutEmails) {
         countQuery = countQuery
           .not('email', 'is', null)
           .neq('email', 'EmailNotFound');
       }
 
-      if (!showEmailedLeads && userAccountNumber) {
-        countQuery = countQuery
-          .not('id', 'in',
-            supabase
-              .from('email_drafts')
-              .select('lead_id')
-              .eq('user_id', userAccountNumber)
-          );
+      // Apply excluded leads filter
+      if (excludedLeadIds.length > 0) {
+        countQuery = countQuery.not('id', 'in', excludedLeadIds);
       }
 
+      // Apply address search filter
       if (addressSearch.trim()) {
         countQuery = countQuery.ilike('address', `%${addressSearch.trim()}%`);
       }
@@ -114,7 +145,14 @@ export default function LeadsPage() {
 
       if (countError) {
         console.error('Error getting record count:', countError);
-        setError('Failed to get record count. Please try again.');
+        console.error('Count query details:', {
+          showWithoutEmails,
+          showEmailedLeads,
+          accountNumber,
+          addressSearch: addressSearch.trim()
+        });
+        const errorMessage = countError.message || countError.error_description || JSON.stringify(countError);
+        setError(`Failed to get record count: ${errorMessage}. Please try again.`);
         return;
       }
 
@@ -122,7 +160,7 @@ export default function LeadsPage() {
       setTotalRecords(totalCount);
       setTotalPages(Math.ceil(totalCount / recordsPerPage));
 
-      // Then get the actual data with pagination
+      // Build the data query with pagination
       const from = (currentPage - 1) * recordsPerPage;
       const to = from + recordsPerPage - 1;
 
@@ -131,31 +169,39 @@ export default function LeadsPage() {
         .select('id, title, address, phone, url, email, facebook_url, instagram_url, categories')
         .range(from, to);
 
+      // Apply email filter
       if (!showWithoutEmails) {
         dataQuery = dataQuery
           .not('email', 'is', null)
           .neq('email', 'EmailNotFound');
       }
 
-      if (!showEmailedLeads && userAccountNumber) {
-        dataQuery = dataQuery
-          .not('id', 'in',
-            supabase
-              .from('email_drafts')
-              .select('lead_id')
-              .eq('user_id', userAccountNumber)
-          );
+      // Apply excluded leads filter (reuse the same excluded IDs)
+      if (excludedLeadIds.length > 0) {
+        dataQuery = dataQuery.not('id', 'in', excludedLeadIds);
       }
 
+      // Apply address search filter
       if (addressSearch.trim()) {
         dataQuery = dataQuery.ilike('address', `%${addressSearch.trim()}%`);
       }
+
+      // Sort by ID for consistent ordering
+      dataQuery = dataQuery.order('id');
 
       const { data, error: fetchError } = await dataQuery;
 
       if (fetchError) {
         console.error('Error loading leads:', fetchError);
-        setError('Failed to load leads. Please try again.');
+        console.error('Data query details:', {
+          showWithoutEmails,
+          showEmailedLeads,
+          accountNumber,
+          addressSearch: addressSearch.trim(),
+          currentPage,
+          recordsPerPage
+        });
+        setError(`Failed to load leads: ${fetchError.message}. Please try again.`);
         return;
       }
 
@@ -216,11 +262,6 @@ export default function LeadsPage() {
       return;
     }
 
-    if (!userAccountNumber) {
-      alert('User account number not available');
-      return;
-    }
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -228,14 +269,43 @@ export default function LeadsPage() {
         return;
       }
 
+      // Get account number if not already loaded
+      let currentAccountNumber = accountNumber;
+      if (!currentAccountNumber) {
+        console.log('Account number not loaded, fetching from database...');
+        const { data: userData, error: userError } = await supabase
+          .from('user_accounts')
+          .select('account_number')
+          .eq('uuid', session.user.id)
+          .single();
+
+        if (userError) {
+          console.error('Error fetching user account:', userError);
+          console.error('User ID:', session.user.id);
+          console.error('Error details:', JSON.stringify(userError, null, 2));
+          alert(`Unable to fetch user account information: ${userError.message}. Please try refreshing the page.`);
+          return;
+        }
+
+        if (!userData || !userData.account_number) {
+          console.error('No account data found for user:', session.user.id);
+          alert('User account not found. Please contact support.');
+          return;
+        }
+
+        currentAccountNumber = userData.account_number;
+        setAccountNumber(currentAccountNumber);
+      }
+
       // Convert selected lead IDs to array and join as comma-separated string
       const leadAccountsArray = Array.from(selectedLeads);
 
       const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/6c29bbd1-5fce-4106-be67-33a810a506da';
-      const params = new URLSearchParams({
-        account_number: userAccountNumber.toString(),
-        lead_accounts: leadAccountsArray.join(',')
-      });
+      const params = new URLSearchParams();
+      params.append('account_number', currentAccountNumber.toString());
+      params.append('lead_accounts', JSON.stringify(leadAccountsArray));
+
+      console.log('Calling webhook with params:', params.toString());
 
       const response = await fetch(`${webhookUrl}?${params.toString()}`, {
         method: 'GET',
@@ -250,7 +320,6 @@ export default function LeadsPage() {
       }
 
       const responseText = await response.text();
-      alert(responseText || `Email generation started for ${selectedLeads.size} leads!`);
 
       // Clear selection after successful request
       setSelectedLeads(new Set());

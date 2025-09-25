@@ -340,6 +340,12 @@ export default function AuthPage() {
               View Leads
             </Link>
             <Link
+              href="/auth/email-drafts"
+              className="text-brand-600 hover:text-brand-700 font-medium"
+            >
+              Email Drafts
+            </Link>
+            <Link
               href="/auth/account-settings"
               className="text-brand-600 hover:text-brand-700 font-medium"
             >
