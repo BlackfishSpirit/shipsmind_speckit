@@ -18,7 +18,14 @@ const isPublicRoute = createRouteMatcher([
 export default clerkMiddleware((auth, req) => {
   const { pathname } = req.nextUrl;
 
-  // Protect non-public routes
+  // Redirect unauthenticated users from protected routes to sign-in
+  if (!isPublicRoute(req) && !auth().userId) {
+    const signInUrl = new URL('/sign-in', req.url);
+    signInUrl.searchParams.set('redirect_url', pathname);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  // Protect non-public routes for authenticated users
   if (!isPublicRoute(req)) {
     auth().protect();
   }
