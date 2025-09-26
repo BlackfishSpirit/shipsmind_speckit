@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
 interface EmailDraft {
   id: string;
@@ -26,9 +28,11 @@ export default function EmailDraftsPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [accountNumber, setAccountNumber] = useState<number | null>(null);
   const [emailDrafts, setEmailDrafts] = useState<EmailDraft[]>([]);
+  const [selectedDrafts, setSelectedDrafts] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [exportData, setExportData] = useState<{csvContent: string, filename: string} | null>(null);
   const recordsPerPage = 20;
 
   useEffect(() => {
@@ -175,6 +179,121 @@ export default function EmailDraftsPage() {
     });
   };
 
+  const handleSelectDraft = (draftId: string) => {
+    setSelectedDrafts(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(draftId)) {
+        newSelection.delete(draftId);
+      } else {
+        newSelection.add(draftId);
+      }
+      return newSelection;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const allSelected = emailDrafts.every(draft => selectedDrafts.has(draft.id));
+
+    if (allSelected) {
+      // Deselect all
+      setSelectedDrafts(new Set());
+    } else {
+      // Select all drafts
+      const newSelection = new Set(selectedDrafts);
+      emailDrafts.forEach(draft => {
+        newSelection.add(draft.id);
+      });
+      setSelectedDrafts(newSelection);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedDrafts(new Set());
+  };
+
+  const handleExportSelected = () => {
+    if (selectedDrafts.size === 0) {
+      alert('Please select drafts first');
+      return;
+    }
+
+    // Filter selected drafts
+    const selectedDraftData = emailDrafts.filter(draft => selectedDrafts.has(draft.id));
+
+    // Get current timestamp (safe filename format)
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+
+    // Use a default user business name (could be fetched from user profile in the future)
+    const userBusinessName = 'Blackfish_Spirits'; // This should ideally come from user account data
+
+    console.log('Export filename will be:', `${userBusinessName}_email_drafts_${timestamp}.csv`);
+
+    // Create CSV headers
+    const headers = ['Business Name', 'Email', 'Subject', 'Message', 'Goal', 'Created Date'];
+
+    // Create CSV rows
+    const csvRows = [
+      headers.join(','),
+      ...selectedDraftData.map(draft => [
+        `"${(draft.business_name || '').replace(/"/g, '""')}"`,
+        `"${(draft.email || '').replace(/"/g, '""')}"`,
+        `"${(draft.intro_subject || '').replace(/"/g, '""')}"`,
+        `"${(draft.intro_message || '').replace(/"/g, '""')}"`,
+        `"${(draft.intro_goal || '').replace(/"/g, '""')}"`,
+        `"${formatDate(draft.created_at)}"`
+      ].join(','))
+    ];
+
+    // Prepare CSV data for download button
+    const csvContent = csvRows.join('\n');
+    const filename = `${userBusinessName}_email_drafts_${timestamp}.csv`;
+
+    // Set export data to show download button
+    setExportData({ csvContent, filename });
+  };
+
+  const handleDownloadCSV = () => {
+    if (!exportData) return;
+
+    // Create blob and trigger download
+    const blob = new Blob([exportData.csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // Check if browser supports the modern download method
+    if (window.navigator && (window.navigator as any).msSaveOrOpenBlob) {
+      // IE/Edge legacy support
+      (window.navigator as any).msSaveOrOpenBlob(blob, exportData.filename);
+    } else {
+      // Modern browsers
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      // Set multiple attributes to ensure filename is preserved
+      link.href = url;
+      link.download = exportData.filename;
+      link.setAttribute('download', exportData.filename);
+      link.style.display = 'none';
+      link.style.visibility = 'hidden';
+
+      // Ensure the link is added to DOM before clicking
+      document.body.appendChild(link);
+
+      // Small delay to ensure the link is properly attached
+      setTimeout(() => {
+        link.click();
+
+        // Clean up after a short delay
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }, 100);
+      }, 10);
+    }
+
+    // Clear export data and selection after download
+    setExportData(null);
+    clearSelection();
+  };
+
   if (authLoading || !isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -214,6 +333,62 @@ export default function EmailDraftsPage() {
         </div>
       )}
 
+      {/* Selection Controls */}
+      {emailDrafts.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleSelectAll}
+                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                {emailDrafts.every(draft => selectedDrafts.has(draft.id))
+                  ? 'Deselect All'
+                  : 'Select All'}
+              </button>
+              {selectedDrafts.size > 0 && (
+                <button
+                  onClick={clearSelection}
+                  className="text-sm font-medium text-gray-600 hover:text-gray-700"
+                >
+                  Clear Selection
+                </button>
+              )}
+              {selectedDrafts.size > 0 && !exportData && (
+                <Button
+                  onClick={handleExportSelected}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  size="sm"
+                >
+                  Export Selected Drafts ({selectedDrafts.size})
+                </Button>
+              )}
+              {exportData && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={handleDownloadCSV}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
+                  >
+                    Download CSV ({exportData.filename})
+                  </Button>
+                  <Button
+                    onClick={() => setExportData(null)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="text-sm text-gray-700">
+              <strong>{selectedDrafts.size}</strong> drafts selected
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Email Drafts Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -242,6 +417,9 @@ export default function EmailDraftsPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-4 py-3 text-center font-semibold text-gray-900 w-12">
+                    Select
+                  </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
                     Business
                   </th>
@@ -249,44 +427,62 @@ export default function EmailDraftsPage() {
                     Subject
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                    Goal
+                    Message Preview
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                    Message Preview
+                    Goal
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {emailDrafts.map((draft) => (
-                  <tr key={draft.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-900">
-                          {draft.business_name || 'Unknown Business'}
-                        </div>
-                        <div className="text-gray-500 truncate max-w-xs">
-                          {draft.address || '-'}
-                        </div>
-                        {draft.email && (
-                          <div className="text-brand-600 text-xs">
-                            {draft.email}
+                {emailDrafts.map((draft) => {
+                  const isSelected = selectedDrafts.has(draft.id);
+
+                  return (
+                    <tr
+                      key={draft.id}
+                      className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}
+                    >
+                      <td className="px-4 py-3 text-center">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            if (typeof checked === 'boolean') {
+                              handleSelectDraft(draft.id);
+                            }
+                          }}
+                          className="mx-auto"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-900">
+                            {draft.business_name || 'Unknown Business'}
                           </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {draft.intro_subject || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {draft.intro_goal || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      <div className="max-w-sm whitespace-pre-wrap break-words">
-                        {draft.intro_message || '-'}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <div className="text-gray-500 truncate max-w-xs">
+                            {draft.address || '-'}
+                          </div>
+                          {draft.email && (
+                            <div className="text-brand-600 text-xs">
+                              {draft.email}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {draft.intro_subject || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        <div className="max-w-sm whitespace-pre-wrap break-words">
+                          {draft.intro_message || '-'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {draft.intro_goal || '-'}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
