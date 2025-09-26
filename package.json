@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:full": "pnpm docker:dev && pnpm db:generate && pnpm db:push && pnpm dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

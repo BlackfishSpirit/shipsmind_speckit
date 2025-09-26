@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -87,7 +88,7 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden space-x-8 md:flex">
+        <div className="hidden space-x-8 md:flex md:items-center">
           <Link
             href="#solutions"
             className="nav-link font-medium text-gray-600 transition-colors hover:text-brand-600"
@@ -100,18 +101,41 @@ export function Header() {
           >
             Process
           </Link>
-          <Link
-            href="/auth"
-            className="nav-link font-medium text-gray-600 transition-colors hover:text-brand-600"
-          >
-            Login
-          </Link>
-          <Link
-            href="#contact"
-            className="rounded-full border border-gray-300 bg-white px-5 py-2 font-semibold text-brand-600 transition-colors hover:bg-gray-50"
-          >
-            Get Started
-          </Link>
+
+          {/* Show different content based on auth status */}
+          <SignedOut>
+            <Link
+              href="/sign-in"
+              className="nav-link font-medium text-gray-600 transition-colors hover:text-brand-600"
+            >
+              Login
+            </Link>
+            <Link
+              href="#contact"
+              className="rounded-full border border-gray-300 bg-white px-5 py-2 font-semibold text-brand-600 transition-colors hover:bg-gray-50"
+            >
+              Get Started
+            </Link>
+          </SignedOut>
+
+          <SignedIn>
+            <Link
+              href="/dashboard"
+              className="nav-link font-medium text-gray-600 transition-colors hover:text-brand-600"
+            >
+              Dashboard
+            </Link>
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: "w-8 h-8",
+                  userButtonPopoverCard: "shadow-lg border",
+                  userButtonPopoverActionButton: "hover:bg-gray-50",
+                }
+              }}
+              afterSignOutUrl="/"
+            />
+          </SignedIn>
         </div>
 
         {/* Mobile Menu Button */}
@@ -146,20 +170,46 @@ export function Header() {
           >
             Process
           </Link>
-          <Link
-            href="/auth"
-            className="block px-6 py-2 text-gray-600 transition-colors hover:bg-gray-50"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Login
-          </Link>
-          <Link
-            href="#contact"
-            className="block bg-gray-50 px-6 py-3 font-semibold text-brand-600 transition-colors hover:bg-gray-100"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Get Started
-          </Link>
+
+          {/* Mobile Auth Content */}
+          <SignedOut>
+            <Link
+              href="/sign-in"
+              className="block px-6 py-2 text-gray-600 transition-colors hover:bg-gray-50"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Login
+            </Link>
+            <Link
+              href="#contact"
+              className="block bg-gray-50 px-6 py-3 font-semibold text-brand-600 transition-colors hover:bg-gray-100"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Get Started
+            </Link>
+          </SignedOut>
+
+          <SignedIn>
+            <Link
+              href="/dashboard"
+              className="block px-6 py-2 text-gray-600 transition-colors hover:bg-gray-50"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Dashboard
+            </Link>
+            <div className="flex items-center justify-between px-6 py-2">
+              <span className="text-sm text-gray-500">Account</span>
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "w-8 h-8",
+                    userButtonPopoverCard: "shadow-lg border",
+                  }
+                }}
+                afterSignOutUrl="/"
+              />
+            </div>
+          </SignedIn>
         </div>
       )}
     </header>
