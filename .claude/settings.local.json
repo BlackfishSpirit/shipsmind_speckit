@@ -86,7 +86,11 @@
       "Bash(claude config add-mcp-server n8n npx n8n-mcp)",
       "mcp__context7__get-library-docs",
       "Bash(start http://localhost:3000)",
-      "Bash(start http://localhost:3001/auth/leads)"
+      "Bash(start http://localhost:3001/auth/leads)",
+      "Bash(tasklist)",
+      "Bash(start http://localhost:3001)",
+      "Bash(start http://localhost:3002)",
+      "Bash(start http://localhost:3002/auth/serp-settings)"
     ],
     "deny": [],
     "ask": []

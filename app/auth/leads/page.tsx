@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth, useUser } from '@clerk/nextjs';
 import { supabase } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,10 +22,10 @@ interface SerpLead {
 }
 
 export default function LeadsPage() {
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
   const [accountNumber, setAccountNumber] = useState<number | null>(null);
   const [leads, setLeads] = useState<SerpLead[]>([]);
   const [showWithoutEmails, setShowWithoutEmails] = useState(false);
@@ -37,53 +38,49 @@ export default function LeadsPage() {
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    if (isLoaded && !isSignedIn) {
+      window.location.href = "/sign-in";
+    } else if (isLoaded && isSignedIn && userId) {
+      loadAccountNumber();
+    }
+  }, [isLoaded, isSignedIn, userId]);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isSignedIn && accountNumber !== null) {
       setCurrentPage(1);
       loadLeads();
     }
-  }, [isAuthenticated, showWithoutEmails, showEmailedLeads, recordsPerPage, addressSearch, accountNumber]);
+  }, [isSignedIn, showWithoutEmails, showEmailedLeads, recordsPerPage, addressSearch, accountNumber]);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isSignedIn && accountNumber !== null) {
       loadLeads();
     }
   }, [currentPage]);
 
-  const checkAuthStatus = async () => {
+  const loadAccountNumber = async () => {
+    if (!userId) return;
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setIsAuthenticated(true);
+      // Get user's account number using Clerk userId
+      console.log('Fetching account for Clerk user ID:', userId);
+      const { data: userData, error: userError } = await supabase
+        .from('user_accounts')
+        .select('account_number')
+        .eq('clerk_user_id', userId)
+        .single();
 
-        // Get user's account number
-        console.log('Fetching account for user ID:', session.user.id);
-        const { data: userData, error: userError } = await supabase
-          .from('user_accounts')
-          .select('account_number')
-          .eq('uuid', session.user.id)
-          .single();
-
-        if (userError) {
-          console.error('Error loading user account on init:', userError);
-          console.error('User ID:', session.user.id);
-        } else if (userData) {
-          console.log('Account data loaded:', userData);
-          setAccountNumber(userData.account_number);
-        } else {
-          console.error('No account data returned for user:', session.user.id);
-        }
+      if (userError) {
+        console.error('Error loading user account:', userError);
+        console.error('Clerk User ID:', userId);
+      } else if (userData) {
+        console.log('Account data loaded:', userData);
+        setAccountNumber(userData.account_number);
       } else {
-        window.location.href = "/auth";
+        console.error('No account data returned for Clerk user:', userId);
       }
     } catch (error) {
-      console.error('Error checking auth status:', error);
-      window.location.href = "/auth";
-    } finally {
-      setAuthLoading(false);
+      console.error('Error loading account number:', error);
     }
   };
 
@@ -276,11 +273,8 @@ export default function LeadsPage() {
     }
   };
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
-      window.location.href = "/auth";
-    }
+  const handleLogout = () => {
+    window.location.href = "/sign-out";
   };
 
   const handleSelectLead = (leadId: string, hasEmail: boolean) => {
@@ -325,8 +319,7 @@ export default function LeadsPage() {
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!isSignedIn || !userId) {
         alert('User not authenticated');
         return;
       }
@@ -338,12 +331,12 @@ export default function LeadsPage() {
         const { data: userData, error: userError } = await supabase
           .from('user_accounts')
           .select('account_number')
-          .eq('uuid', session.user.id)
+          .eq('clerk_user_id', userId)
           .single();
 
         if (userError) {
           console.error('Error fetching user account:', userError);
-          console.error('User ID:', session.user.id);
+          console.error('Clerk User ID:', userId);
           console.error('Error details:', JSON.stringify(userError, null, 2));
           alert(`Unable to fetch user account information: ${userError.message}. Please try refreshing the page.`);
           return;
@@ -403,12 +396,12 @@ export default function LeadsPage() {
   };
 
 
-  if (authLoading || !isAuthenticated) {
+  if (!isLoaded || !isSignedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {authLoading ? "Loading..." : "Checking authentication..."}
+            {!isLoaded ? "Loading..." : "Checking authentication..."}
           </h2>
         </div>
       </div>
