@@ -80,6 +80,60 @@ This interactive checklist guides you through:
 - **AI Tools**: Claude Code with MCP servers
 - **Development**: Docker, pnpm, Specify CLI
 
+## 📁 **App Directory Structure**
+
+The Next.js App Router is organized as follows:
+
+### **Root Pages**
+- `/` - Homepage with hero section, solutions overview, and CTA
+- `/auth` - Authentication hub with login/signup and dashboard
+- `/dashboard` - Main application dashboard
+- `/dev` - Development tools and workflow management
+- `/solutions` - Industry-specific solution pages
+
+### **API Routes** (`/api`)
+- `/api/auth/` - Authentication endpoints
+  - `session` - Session management and user info
+  - `verification-status` - Email verification status
+  - `preferences` - User preference management
+- `/api/contact` - Contact form submission
+- `/api/dev/workflow/` - Development workflow APIs
+  - `progress` - Workflow progress tracking
+
+### **Authentication Pages** (`/auth`)
+- `/auth` - Main auth page with login/signup forms and SERP settings
+- `/auth/account-settings` - User account management
+- `/auth/category-lookup` - Browse business categories
+- `/auth/email-drafts` - Email draft management
+- `/auth/email-settings` - Email configuration
+- `/auth/leads` - Lead management dashboard
+- `/auth/location-lookup` - Location code browser
+- `/auth/profile-setup` - Initial profile configuration
+
+### **Clerk Auth Routes** (`/(auth)`)
+- `/(auth)/sign-in/[[...rest]]` - Clerk sign-in pages
+- `/(auth)/sign-up/[[...rest]]` - Clerk sign-up pages
+
+### **Dashboard Pages** (`/dashboard`)
+- `/dashboard/leads` - Lead management interface
+
+### **Development Tools** (`/dev`)
+- `/dev/design` - Design workflow and tools
+- `/dev/features` - Feature development tracking
+- `/dev/workflow` - Interactive development checklist
+
+### **Solution Pages** (`/solutions`)
+- `/solutions/accounting` - Accounting automation solutions
+- `/solutions/marketing` - Marketing automation solutions
+- `/solutions/retail` - Retail automation solutions
+- `/solutions/trades` - Skilled trades automation solutions
+
+### **Layout Files**
+- `app/layout.tsx` - Root layout with Clerk provider and header
+- `app/auth/layout.tsx` - Authentication section layout
+
+**Total: 29 TypeScript files across 30+ directories**
+
 ---
 
 ## 🤖 **AI-Powered Development**

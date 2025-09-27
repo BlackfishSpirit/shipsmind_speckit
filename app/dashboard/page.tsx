@@ -30,136 +30,69 @@ export default async function DashboardPage() {
 
   const toolCategories = [
     {
-      title: "Vertical Solutions",
-      description: "Industry-specific AI automation tools",
-      tools: [
-        {
-          name: "AI for Local Retail",
-          description: "Inventory management, customer insights, and sales optimization",
-          href: "/solutions/retail",
-          icon: BuildingOfficeIcon,
-          color: "bg-blue-500"
-        },
-        {
-          name: "AI for Law Firms",
-          description: "Document analysis, case management, and client communication",
-          href: "/solutions/legal",
-          icon: ScaleIcon,
-          color: "bg-purple-500"
-        },
-        {
-          name: "AI for Accounting",
-          description: "Automated bookkeeping, expense tracking, and financial reporting",
-          href: "/solutions/accounting",
-          icon: CalculatorIcon,
-          color: "bg-green-500"
-        },
-        {
-          name: "AI for Skilled Trades",
-          description: "Job scheduling, equipment tracking, and customer management",
-          href: "/solutions/trades",
-          icon: WrenchScrewdriverIcon,
-          color: "bg-orange-500"
-        }
-      ]
-    },
-    {
-      title: "Content & Education",
-      description: "Manage your knowledge base and educational content",
-      tools: [
-        {
-          name: "Content Hub",
-          description: "Manage blog posts, case studies, and educational content",
-          href: "/dashboard/content",
-          icon: DocumentTextIcon,
-          color: "bg-indigo-500"
-        },
-        {
-          name: "Blog Management",
-          description: "Create and publish blog posts about AI automation",
-          href: "/dashboard/blog",
-          icon: ChatBubbleLeftRightIcon,
-          color: "bg-pink-500"
-        }
-      ]
-    },
-    {
       title: "Lead Management",
       description: "Capture, nurture, and convert potential clients",
       tools: [
         {
-          name: "Lead Capture",
-          description: "Forms, landing pages, and lead magnets",
-          href: "/dashboard/leads",
+          name: "Lead Dashboard",
+          description: "View and manage all your leads in one place",
+          href: "/auth/leads",
           icon: UserGroupIcon,
           color: "bg-cyan-500"
         },
         {
-          name: "Email Campaigns",
-          description: "Automated email sequences and newsletters",
-          href: "/dashboard/emails",
-          icon: EnvelopeIcon,
-          color: "bg-red-500"
+          name: "Business Categories",
+          description: "Browse and select business categories for targeting",
+          href: "/auth/category-lookup",
+          icon: BuildingOfficeIcon,
+          color: "bg-blue-500"
         },
         {
-          name: "Contact Management",
-          description: "CRM integration and contact database",
-          href: "/dashboard/contacts",
-          icon: PhoneIcon,
-          color: "bg-yellow-500"
-        }
-      ]
-    },
-    {
-      title: "Booking & Scheduling",
-      description: "Manage appointments and consultations",
-      tools: [
-        {
-          name: "Calendar Integration",
-          description: "Schedule consultations and manage availability",
-          href: "/dashboard/calendar",
-          icon: CalendarIcon,
-          color: "bg-teal-500"
-        }
-      ]
-    },
-    {
-      title: "Analytics & Automation",
-      description: "Track performance and automate workflows",
-      tools: [
-        {
-          name: "Analytics Dashboard",
-          description: "Track website performance, lead conversion, and ROI",
-          href: "/dashboard/analytics",
-          icon: ChartBarIcon,
-          color: "bg-blue-600"
-        },
-        {
-          name: "Automation Workflows",
-          description: "Create and manage automated business processes",
-          href: "/dashboard/automation",
-          icon: BoltIcon,
-          color: "bg-purple-600"
-        },
-        {
-          name: "Performance Tracking",
-          description: "Monitor KPIs and business metrics",
-          href: "/dashboard/performance",
+          name: "Location Lookup",
+          description: "Find and configure location codes for lead targeting",
+          href: "/auth/location-lookup",
           icon: PresentationChartLineIcon,
           color: "bg-green-600"
         }
       ]
     },
     {
-      title: "Settings & Configuration",
-      description: "Manage your account and system settings",
+      title: "Email Management",
+      description: "Create and manage your email communications",
+      tools: [
+        {
+          name: "Email Drafts",
+          description: "Create, edit, and manage email drafts",
+          href: "/auth/email-drafts",
+          icon: DocumentTextIcon,
+          color: "bg-indigo-500"
+        },
+        {
+          name: "Email Settings",
+          description: "Configure email preferences and templates",
+          href: "/auth/email-settings",
+          icon: EnvelopeIcon,
+          color: "bg-red-500"
+        }
+      ]
+    },
+    {
+      title: "Account & Profile",
+      description: "Manage your account settings and profile",
       tools: [
         {
           name: "Account Settings",
-          description: "Profile, billing, and notification preferences",
-          href: "/dashboard/settings",
+          description: "Manage profile, billing, and notification preferences",
+          href: "/auth/account-settings",
           icon: CogIcon,
           color: "bg-gray-500"
+        },
+        {
+          name: "Profile Setup",
+          description: "Complete your profile setup and configuration",
+          href: "/auth/profile-setup",
+          icon: UserGroupIcon,
+          color: "bg-purple-500"
         }
       ]
     }
@@ -244,22 +177,22 @@ export default async function DashboardPage() {
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link
-                href="/dashboard/leads"
+                href="/auth/leads"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                Capture New Leads
+                View Leads
               </Link>
               <Link
-                href="/dashboard/analytics"
+                href="/auth/email-drafts"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                View Analytics
+                Create Email
               </Link>
               <Link
-                href="/dashboard/automation"
+                href="/auth/account-settings"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                Create Automation
+                Account Settings
               </Link>
             </div>
           </div>
