@@ -107,3 +107,17 @@ model User {
 
   @@map("users")
 }
+
+// User preferences for Clerk-authenticated users
+model UserPreferences {
+  id                   String    @id @default(cuid())
+  clerkUserId          String    @unique @map("clerk_user_id")
+  theme                String    @default("system") // "light", "dark", "system"
+  notifications        Boolean   @default(true)
+  lastLoginReminder    DateTime? @map("last_login_reminder")
+  verificationPrompted Boolean   @default(false) @map("verification_prompted")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@map("user_preferences")
+}

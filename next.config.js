@@ -24,13 +24,7 @@ const nextConfig = {
     ],
   },
   async redirects() {
-    return [
-      {
-        source: "/dashboard",
-        destination: "/dashboard/overview",
-        permanent: true,
-      },
-    ];
+    return [];
   },
   async headers() {
     return [
