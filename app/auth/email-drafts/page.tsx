@@ -255,8 +255,13 @@ export default function EmailDraftsPage() {
   const handleDownloadCSV = () => {
     if (!exportData) return;
 
+    // Add UTF-8 BOM (Byte Order Mark) to help Excel detect UTF-8 encoding
+    // This fixes the issue where apostrophes display as "â€™" in Excel
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + exportData.csvContent;
+
     // Create blob and trigger download
-    const blob = new Blob([exportData.csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
 
     // Check if browser supports the modern download method
     if (window.navigator && (window.navigator as any).msSaveOrOpenBlob) {

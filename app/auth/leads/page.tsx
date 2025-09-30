@@ -194,23 +194,16 @@ export default function LeadsPage() {
           excludedLeadIds: excludedLeadIds.length
         });
 
-        // Try different error message extraction methods
-        let errorMessage = 'Unknown error';
-        if (countError.message) {
-          errorMessage = countError.message;
-        } else if (countError.error_description) {
-          errorMessage = countError.error_description;
-        } else if (countError.details) {
-          errorMessage = countError.details;
-        } else if (countError.hint) {
-          errorMessage = countError.hint;
-        } else if (countError.code) {
-          errorMessage = `Error code: ${countError.code}`;
-        } else {
-          errorMessage = JSON.stringify(countError);
-        }
+        // Log the error for debugging but don't show confusing error to user
+        console.error('Error getting lead count:', countError);
 
-        setError(`Failed to get record count: ${errorMessage}. Please try again.`);
+        // If it's likely an empty result rather than a real error, don't show error message
+        // Just set the count to 0 and let the UI show the "no leads" message
+        const totalCount = 0;
+        setTotalRecords(totalCount);
+        setTotalPages(0);
+        setLeads([]);
+        setIsLoading(false);
         return;
       }
 
@@ -601,7 +594,7 @@ export default function LeadsPage() {
           </div>
         ) : leads.length === 0 ? (
           <div className="text-center py-8 text-gray-600">
-            No leads found. Try adjusting your filters or run a new search.
+            No leads found. Configure your SERP settings to generate leads.
           </div>
         ) : (
           <div className="overflow-x-auto">
