@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useAuth } from '@clerk/nextjs';
-import { supabase } from "@/lib/supabase/client";
+import { useAuth, useUser } from '@clerk/nextjs';
+import { supabase, getAuthenticatedClient } from "@/lib/supabase/client";
 
 export default function AccountSettingsPage() {
-  const { getToken } = useAuth();
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
 
   // User profile state
   const [firstName, setFirstName] = useState("");
@@ -37,8 +36,18 @@ export default function AccountSettingsPage() {
   const [canChangeEmail, setCanChangeEmail] = useState(false);
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    if (isLoaded && !isSignedIn) {
+      window.location.href = "/sign-in";
+    } else if (isLoaded && isSignedIn && userId) {
+      loadUserProfile();
+    }
+  }, [isLoaded, isSignedIn, userId]);
+
+  useEffect(() => {
+    if (user?.primaryEmailAddress?.emailAddress) {
+      setEmail(user.primaryEmailAddress.emailAddress);
+    }
+  }, [user]);
 
   useEffect(() => {
     setCanChangeEmail(newEmail.length > 0 && verifyEmail.length > 0 && newEmail === verifyEmail);
@@ -66,12 +75,22 @@ export default function AccountSettingsPage() {
     return { street, city, state, zip };
   };
 
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = async () => {
+    if (!userId) return;
+
     try {
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       const { data, error } = await supabase
         .from('user_accounts')
         .select('*')
-        .eq('uuid', userId)
+        .eq('clerk_id', userId)
         .single();
 
       if (error) {
@@ -112,23 +131,6 @@ export default function AccountSettingsPage() {
     }
   };
 
-  const checkAuthStatus = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setIsAuthenticated(true);
-        setEmail(session.user.email || "");
-        await loadUserProfile(session.user.id);
-      } else {
-        window.location.href = "/auth";
-      }
-    } catch (error) {
-      console.error('Error checking auth status:', error);
-      window.location.href = "/auth";
-    } finally {
-      setAuthLoading(false);
-    }
-  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,11 +139,17 @@ export default function AccountSettingsPage() {
     setMessage("");
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
+      if (!userId) {
         setError('Please log in first');
         return;
       }
+
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
 
       // Create concatenated business address in email_site format: "Street. City, State Zip"
       let concatenatedAddress = '';
@@ -160,7 +168,7 @@ export default function AccountSettingsPage() {
           business_url: businessUrl.trim() || null,
           business_profile: businessProfileText.trim() || null
         })
-        .eq('uuid', session.user.id);
+        .eq('clerk_id', userId);
 
       if (error) {
         console.error('Error saving profile:', error);
@@ -247,20 +255,25 @@ export default function AccountSettingsPage() {
     }
 
     try {
-      // Get the current session
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
+      if (!userId) {
         setError('Please log in first');
         setIsLoading(false);
         return;
       }
 
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       // Get account number for webhook call
       const { data: accountData, error: accountError } = await supabase
         .from('user_accounts')
         .select('account_number')
-        .eq('uuid', session.user.id)
+        .eq('clerk_id', userId)
         .single();
 
       if (accountError || !accountData?.account_number) {
@@ -320,14 +333,20 @@ export default function AccountSettingsPage() {
   };
 
   const refreshBusinessProfile = async () => {
+    if (!userId) return;
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
 
       const { data, error } = await supabase
         .from('user_accounts')
         .select('business_profile')
-        .eq('uuid', session.user.id)
+        .eq('clerk_id', userId)
         .single();
 
       if (error) {
@@ -355,19 +374,26 @@ export default function AccountSettingsPage() {
     setIsLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!userId) {
         setError('Please log in first');
         setIsLoading(false);
         return;
       }
+
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
 
       const { error } = await supabase
         .from('user_accounts')
         .update({
           business_profile: businessProfileText
         })
-        .eq('uuid', session.user.id);
+        .eq('clerk_id', userId);
 
       if (error) {
         console.error('Error updating business profile:', error);
@@ -384,19 +410,16 @@ export default function AccountSettingsPage() {
     }
   };
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
-      window.location.href = "/auth";
-    }
+  const handleLogout = () => {
+    window.location.href = "/sign-out";
   };
 
-  if (authLoading || !isAuthenticated) {
+  if (!isLoaded || !isSignedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {authLoading ? "Loading..." : "Checking authentication..."}
+            {!isLoaded ? "Loading..." : "Checking authentication..."}
           </h2>
         </div>
       </div>

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import { useAuth } from '@clerk/nextjs';
+import { supabase, getAuthenticatedClient } from "@/lib/supabase/client";
 
 interface CategoryResult {
   code: string;
@@ -10,6 +11,7 @@ interface CategoryResult {
 }
 
 export default function CategoryLookupPage() {
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<CategoryResult[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
@@ -17,8 +19,6 @@ export default function CategoryLookupPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [showResults, setShowResults] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
   const [categoryType, setCategoryType] = useState<'included' | 'excluded'>('included');
 
   // Interface for google_categories table structure
@@ -29,7 +29,9 @@ export default function CategoryLookupPage() {
 
   // Check authentication and URL parameters on mount
   useEffect(() => {
-    checkAuthStatus();
+    if (isLoaded && !isSignedIn) {
+      window.location.href = "/sign-in";
+    }
 
     // Read URL parameter to determine category type
     const urlParams = new URLSearchParams(window.location.search);
@@ -39,24 +41,7 @@ export default function CategoryLookupPage() {
     } else {
       setCategoryType('included');
     }
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setIsAuthenticated(true);
-      } else {
-        // Redirect to login if not authenticated
-        window.location.href = '/auth';
-      }
-    } catch (error) {
-      console.error('Error checking auth status:', error);
-      window.location.href = '/auth';
-    } finally {
-      setAuthLoading(false);
-    }
-  };
+  }, [isLoaded, isSignedIn]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -164,12 +149,18 @@ export default function CategoryLookupPage() {
     setMessage("");
 
     try {
-      // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
+      if (!userId) {
         setError('Please log in first');
         return false;
       }
+
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        return false;
+      }
+      const supabase = getAuthenticatedClient(token);
 
       // Determine which column to update based on category type
       const columnName = categoryType === 'excluded' ? 'serp_exc_cat' : 'serp_cat';
@@ -178,7 +169,7 @@ export default function CategoryLookupPage() {
       const { data: currentData, error: fetchError } = await supabase
         .from('user_accounts')
         .select(columnName)
-        .eq('uuid', session.user.id)
+        .eq('clerk_id', userId)
         .single();
 
       if (fetchError) {
@@ -205,7 +196,7 @@ export default function CategoryLookupPage() {
       const { error: updateError } = await supabase
         .from('user_accounts')
         .update(updateData)
-        .eq('uuid', session.user.id);
+        .eq('clerk_id', userId);
 
       if (updateError) {
         console.error('Error updating categories:', updateError);
@@ -228,12 +219,12 @@ export default function CategoryLookupPage() {
     window.location.href = "/auth";
   };
 
-  if (authLoading || !isAuthenticated) {
+  if (!isLoaded || !isSignedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {authLoading ? "Loading..." : "Checking authentication..."}
+            {!isLoaded ? "Loading..." : "Checking authentication..."}
           </h2>
         </div>
       </div>

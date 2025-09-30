@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import { useAuth } from '@clerk/nextjs';
+import { supabase, getAuthenticatedClient } from "@/lib/supabase/client";
 
 interface LocationResult {
   code: string;
@@ -10,6 +11,7 @@ interface LocationResult {
 }
 
 export default function LocationLookupPage() {
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<LocationResult[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<Set<string>>(new Set());
@@ -17,8 +19,6 @@ export default function LocationLookupPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [showResults, setShowResults] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
 
   // Interface for Google_Locations table structure
   interface GoogleLocation {
@@ -28,25 +28,10 @@ export default function LocationLookupPage() {
 
   // Check authentication on mount
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setIsAuthenticated(true);
-      } else {
-        // Redirect to login if not authenticated
-        window.location.href = '/auth';
-      }
-    } catch (error) {
-      console.error('Error checking auth status:', error);
-      window.location.href = '/auth';
-    } finally {
-      setAuthLoading(false);
+    if (isLoaded && !isSignedIn) {
+      window.location.href = "/sign-in";
     }
-  };
+  }, [isLoaded, isSignedIn]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -147,18 +132,24 @@ export default function LocationLookupPage() {
     setMessage("");
 
     try {
-      // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
+      if (!userId) {
         setError('Please log in first');
         return false;
       }
+
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        return false;
+      }
+      const supabase = getAuthenticatedClient(token);
 
       // Get current serp_locations value
       const { data: currentData, error: fetchError } = await supabase
         .from('user_accounts')
         .select('serp_locations')
-        .eq('uuid', session.user.id)
+        .eq('clerk_id', userId)
         .single();
 
       if (fetchError) {
@@ -184,7 +175,7 @@ export default function LocationLookupPage() {
       const { error: updateError } = await supabase
         .from('user_accounts')
         .update({ serp_locations: newLocationsString })
-        .eq('uuid', session.user.id);
+        .eq('clerk_id', userId);
 
       if (updateError) {
         console.error('Error updating locations:', updateError);
@@ -207,12 +198,12 @@ export default function LocationLookupPage() {
     window.location.href = "/auth";
   };
 
-  if (authLoading || !isAuthenticated) {
+  if (!isLoaded || !isSignedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {authLoading ? "Loading..." : "Checking authentication..."}
+            {!isLoaded ? "Loading..." : "Checking authentication..."}
           </h2>
         </div>
       </div>

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import { useAuth } from '@clerk/nextjs';
+import { supabase, getAuthenticatedClient } from "@/lib/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 
@@ -22,10 +23,9 @@ interface EmailDraft {
 }
 
 export default function EmailDraftsPage() {
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
   const [accountNumber, setAccountNumber] = useState<number | null>(null);
   const [emailDrafts, setEmailDrafts] = useState<EmailDraft[]>([]);
   const [selectedDrafts, setSelectedDrafts] = useState<Set<string>>(new Set());
@@ -36,39 +36,42 @@ export default function EmailDraftsPage() {
   const recordsPerPage = 20;
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    if (isLoaded && !isSignedIn) {
+      window.location.href = "/sign-in";
+    } else if (isLoaded && isSignedIn && userId) {
+      fetchAccountNumber();
+    }
+  }, [isLoaded, isSignedIn, userId]);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (accountNumber) {
       loadEmailDrafts();
     }
-  }, [isAuthenticated, currentPage, accountNumber]);
+  }, [accountNumber, currentPage]);
 
-  const checkAuthStatus = async () => {
+  const fetchAccountNumber = async () => {
+    if (!userId) return;
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setIsAuthenticated(true);
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
 
-        // Get user's account number
-        const { data: userData, error: userError } = await supabase
-          .from('user_accounts')
-          .select('account_number')
-          .eq('uuid', session.user.id)
-          .single();
+      const { data: userData, error: userError } = await supabase
+        .from('user_accounts')
+        .select('account_number')
+        .eq('clerk_id', userId)
+        .single();
 
-        if (!userError && userData) {
-          setAccountNumber(userData.account_number);
-        }
-      } else {
-        window.location.href = "/auth";
+      if (!userError && userData) {
+        setAccountNumber(userData.account_number);
       }
     } catch (error) {
-      console.error('Error checking auth status:', error);
-      window.location.href = "/auth";
-    } finally {
-      setAuthLoading(false);
+      console.error('Error fetching account number:', error);
     }
   };
 
@@ -161,11 +164,8 @@ export default function EmailDraftsPage() {
     }
   };
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
-      window.location.href = "/auth";
-    }
+  const handleLogout = () => {
+    window.location.href = "/sign-out";
   };
 
   const formatDate = (dateString?: string) => {
@@ -294,12 +294,12 @@ export default function EmailDraftsPage() {
     clearSelection();
   };
 
-  if (authLoading || !isAuthenticated) {
+  if (!isLoaded || !isSignedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {authLoading ? "Loading..." : "Checking authentication..."}
+            {!isLoaded ? "Loading..." : "Checking authentication..."}
           </h2>
         </div>
       </div>
