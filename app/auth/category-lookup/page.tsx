@@ -56,8 +56,17 @@ export default function CategoryLookupPage() {
     try {
       console.log('Searching for categories:', searchTerm);
 
+      // Get authenticated Supabase client
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+      const authenticatedSupabase = getAuthenticatedClient(token);
+
       // Query the google_categories table from Supabase
-      const { data, error } = await supabase
+      const { data, error } = await authenticatedSupabase
         .from('google_categories')
         .select('*')
         .ilike('category', `%${searchTerm}%`)

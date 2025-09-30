@@ -46,8 +46,17 @@ export default function LocationLookupPage() {
     try {
       console.log('Searching for:', searchTerm);
 
+      // Get authenticated Supabase client
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+      const authenticatedSupabase = getAuthenticatedClient(token);
+
       // Query the google_locations table from Supabase
-      const { data, error } = await supabase
+      const { data, error } = await authenticatedSupabase
         .from('google_locations')
         .select('location_code, location_name')
         .ilike('location_name', `%${searchTerm}%`)
