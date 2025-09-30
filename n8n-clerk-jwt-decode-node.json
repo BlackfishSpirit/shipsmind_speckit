@@ -1,0 +1,19 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Get the token from the previous Set node\nconst token = $input.item.json.user_token;\n\nif (!token) {\n  throw new Error('No token provided in user_token field');\n}\n\n// Validate JWT format\nconst parts = token.split('.');\nif (parts.length !== 3) {\n  throw new Error('Invalid JWT format - token must have 3 parts');\n}\n\ntry {\n  // Decode the payload (middle part of JWT)\n  const payload = JSON.parse(\n    Buffer.from(parts[1], 'base64').toString()\n  );\n  \n  // Check if token is expired\n  const now = Math.floor(Date.now() / 1000);\n  if (payload.exp && payload.exp < now) {\n    throw new Error('Token has expired');\n  }\n  \n  // Check if token is being used before its valid time\n  if (payload.nbf && payload.nbf > now) {\n    throw new Error('Token not yet valid');\n  }\n  \n  // Return the original data plus decoded token information\n  return {\n    ...($input.item.json),\n    clerk_user_id: payload.sub,\n    user_email: payload.email || null,\n    session_id: payload.sid || null,\n    token_issued_at: payload.iat,\n    token_expires_at: payload.exp,\n    token_valid: true,\n    decoded_payload: payload\n  };\n  \n} catch (error) {\n  throw new Error(`Failed to decode token: ${error.message}`);\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1288,
+        -192
+      ],
+      "id": "da425ccf-dc1f-4e52-8031-dd74d3ed00ab",
+      "name": "Decode Clerk JWT"
+    }
+  ],
+  "connections": {},
+  "pinData": {}
+}

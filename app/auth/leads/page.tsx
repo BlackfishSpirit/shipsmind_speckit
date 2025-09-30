@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth, useUser } from '@clerk/nextjs';
-import { supabase } from "@/lib/supabase/client";
+import { getAuthenticatedClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ interface SerpLead {
 }
 
 export default function LeadsPage() {
-  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -62,12 +62,20 @@ export default function LeadsPage() {
     if (!userId) return;
 
     try {
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       // Get user's account number using Clerk userId
       console.log('Fetching account for Clerk user ID:', userId);
       const { data: userData, error: userError } = await supabase
         .from('user_accounts')
         .select('account_number')
-        .eq('clerk_user_id', userId)
+        .eq('clerk_id', userId)
         .single();
 
       if (userError) {
@@ -94,6 +102,14 @@ export default function LeadsPage() {
     }
 
     try {
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        return [];
+      }
+      const supabase = getAuthenticatedClient(token);
+
       console.log('Querying email_drafts for user_id:', accountNumber);
       const { data: draftIds, error: draftError } = await supabase
         .from('email_drafts')
@@ -121,6 +137,15 @@ export default function LeadsPage() {
     setError("");
 
     try {
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       // Get excluded lead IDs first
       const excludedLeadIds = await getExcludedLeadIds();
 
@@ -324,6 +349,14 @@ export default function LeadsPage() {
         return;
       }
 
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        alert('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       // Get account number if not already loaded
       let currentAccountNumber = accountNumber;
       if (!currentAccountNumber) {
@@ -331,7 +364,7 @@ export default function LeadsPage() {
         const { data: userData, error: userError } = await supabase
           .from('user_accounts')
           .select('account_number')
-          .eq('clerk_user_id', userId)
+          .eq('clerk_id', userId)
           .single();
 
         if (userError) {
@@ -343,7 +376,7 @@ export default function LeadsPage() {
         }
 
         if (!userData || !userData.account_number) {
-          console.error('No account data found for user:', session.user.id);
+          console.error('No account data found for user:', userId);
           alert('User account not found. Please contact support.');
           return;
         }
@@ -362,10 +395,17 @@ export default function LeadsPage() {
 
       console.log('Calling webhook with params:', params.toString());
 
+      // Get Clerk token for webhook
+      const clerkToken = await getToken();
+      if (!clerkToken) {
+        alert('Failed to get authentication token. Please sign in again.');
+        return;
+      }
+
       const response = await fetch(`${webhookUrl}?${params.toString()}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${clerkToken}`,
           'Accept': 'application/json'
         }
       });

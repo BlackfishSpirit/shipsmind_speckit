@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from '@clerk/nextjs';
 import { supabase } from "@/lib/supabase/client";
 
 export default function ProfileSetupPage() {
+  const { getToken } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -104,10 +106,18 @@ export default function ProfileSetupPage() {
         alt_url: ''
       });
 
+      // Get Clerk token for webhook
+      const clerkToken = await getToken();
+      if (!clerkToken) {
+        setError('Failed to get authentication token. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch(`${webhookUrl}?${params.toString()}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${clerkToken}`,
           'Accept': 'application/json'
         }
       });

@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from '@clerk/nextjs';
 import { supabase } from "@/lib/supabase/client";
 
 export default function AccountSettingsPage() {
+  const { getToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -269,16 +271,24 @@ export default function AccountSettingsPage() {
       }
 
       // Call the profile generation webhook
-      const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/54f613d0-40f2-4f1c-9a8a-70f0ac45416f';
+      const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/81a5d1ac-c5c5-4cda-8baf-9da9d7729ee6';
       const params = new URLSearchParams({
         account_number: accountData.account_number,
         alt_url: urlToUse
       });
 
+      // Get Clerk token for webhook
+      const clerkToken = await getToken();
+      if (!clerkToken) {
+        setError('Failed to get authentication token. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch(`${webhookUrl}?${params.toString()}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${clerkToken}`,
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         }

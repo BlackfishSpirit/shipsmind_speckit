@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth, useUser } from '@clerk/nextjs';
-import { supabase } from "@/lib/supabase/client";
+import { getAuthenticatedClient } from "@/lib/supabase/client";
 
 export default function SerpSettingsPage() {
-  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -47,6 +47,15 @@ export default function SerpSettingsPage() {
     if (!userId) return;
 
     try {
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       // Get user's account number using Clerk userId
       console.log('Fetching account for Clerk user ID:', userId);
 
@@ -85,6 +94,14 @@ export default function SerpSettingsPage() {
 
   const loadSerpSettings = async (userId: string) => {
     try {
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       const { data, error } = await supabase
         .from('user_accounts')
         .select('serp_keywords, serp_cat, serp_exc_cat, serp_locations, serp_states')
@@ -116,6 +133,15 @@ export default function SerpSettingsPage() {
 
     setIsSaving(true);
     try {
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       const cleanedKeywords = cleanCommaSeparatedValues(serpKeywords, true);
       const cleanedCategory = cleanCommaSeparatedValues(serpCategory);
       const cleanedExcludedCategory = cleanCommaSeparatedValues(serpExcludedCategory);
@@ -164,6 +190,14 @@ export default function SerpSettingsPage() {
         return;
       }
 
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       // First, update the SERP settings in the database
       const cleanedKeywords = cleanCommaSeparatedValues(serpKeywords, true);
       const cleanedCategory = cleanCommaSeparatedValues(serpCategory, false);
@@ -193,6 +227,13 @@ export default function SerpSettingsPage() {
         return;
       }
 
+      // Get Clerk bearer token for webhook authentication
+      const clerkToken = await getToken();
+      if (!clerkToken) {
+        setError('Failed to get authentication token.');
+        return;
+      }
+
       // Call the search webhook
       const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/fc85b949-e81a-4a7c-849d-b7e1d775c4d0';
       const params = new URLSearchParams({
@@ -203,20 +244,50 @@ export default function SerpSettingsPage() {
       const response = await fetch(`${webhookUrl}?${params.toString()}`, {
         method: 'GET',
         headers: {
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${clerkToken}`
         }
       });
 
+      // Handle non-OK responses
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Search failed (${response.status}): ${errorText}`);
+        const contentType = response.headers.get('content-type');
+        let errorMessage = `Search failed (${response.status})`;
+
+        try {
+          if (contentType?.includes('application/json')) {
+            const errorJson = await response.json();
+            errorMessage = errorJson.message || errorJson.error || errorMessage;
+          } else {
+            const errorText = await response.text();
+            errorMessage = errorText || errorMessage;
+          }
+        } catch (e) {
+          // If parsing fails, use default message
+        }
+
+        throw new Error(errorMessage);
       }
 
-      // Get the response text from the webhook
-      const responseText = await response.text();
+      // Parse the webhook response
+      const contentType = response.headers.get('content-type');
+      let responseMessage = 'Search started successfully!';
 
-      // Display the actual response from the webhook
-      setMessage(responseText || 'Search started successfully!');
+      try {
+        if (contentType?.includes('application/json')) {
+          const responseJson = await response.json();
+          responseMessage = responseJson.message || responseJson.result || responseMessage;
+        } else {
+          const responseText = await response.text();
+          responseMessage = responseText || responseMessage;
+        }
+      } catch (e) {
+        // If parsing fails, use default success message
+        console.warn('Could not parse webhook response:', e);
+      }
+
+      // Display the response from the webhook
+      setMessage(responseMessage);
 
     } catch (error: any) {
       console.error('Error starting search:', error);
@@ -285,14 +356,15 @@ export default function SerpSettingsPage() {
         </div>
       </div>
 
+      {/* Fixed position notifications to prevent layout shift */}
       {message && (
-        <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-green-800">
+        <div className="fixed top-4 right-4 z-50 rounded-lg bg-green-50 border border-green-200 p-4 text-green-800 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
           {message}
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-800">
+        <div className="fixed top-4 right-4 z-50 rounded-lg bg-red-50 border border-red-200 p-4 text-red-800 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
           {error}
         </div>
       )}
