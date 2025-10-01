@@ -1,81 +1,18 @@
--- Fix email_drafts RLS policies to handle both Clerk and Supabase auth
--- This script updates the policies to support dual authentication methods
+-- Update email_drafts RLS policy to use Clerk authentication only
+-- Allows users to access email_drafts rows where user_id matches their user_accounts.id
 
--- Drop existing policies (adjust policy names if different)
-DROP POLICY IF EXISTS "Users can view their own drafts" ON email_drafts;
-DROP POLICY IF EXISTS "Users can update their own drafts" ON email_drafts;
-DROP POLICY IF EXISTS "Users can insert their own drafts" ON email_drafts;
-DROP POLICY IF EXISTS "Users can delete their own drafts" ON email_drafts;
+DROP POLICY IF EXISTS "Users can view their email drafts" ON email_drafts;
 
--- SELECT policy - View own drafts
-CREATE POLICY "Users can view their own drafts" ON email_drafts
-  FOR SELECT
-  USING (
-    user_id IN (
-      SELECT ua.account_number
-      FROM user_accounts ua
-      WHERE (
-        -- Clerk authentication (TEXT clerk_id)
-        (ua.clerk_id = ((SELECT auth.jwt()) ->> 'sub'))
-        OR
-        -- Supabase authentication (UUID)
-        (ua.uuid = (SELECT auth.uid() AS uid))
-      )
-    )
-  );
-
--- UPDATE policy - Update own drafts
-CREATE POLICY "Users can update their own drafts" ON email_drafts
-  FOR UPDATE
-  USING (
-    user_id IN (
-      SELECT ua.account_number
-      FROM user_accounts ua
-      WHERE (
-        (ua.clerk_id = ((SELECT auth.jwt()) ->> 'sub'))
-        OR
-        (ua.uuid = (SELECT auth.uid() AS uid))
-      )
-    )
+CREATE POLICY "Users can view their email drafts" ON email_drafts
+FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1
+    FROM user_accounts
+    WHERE user_accounts.id = email_drafts.user_id
+    AND user_accounts.clerk_id = (SELECT auth.jwt() ->> 'sub')
   )
-  WITH CHECK (
-    user_id IN (
-      SELECT ua.account_number
-      FROM user_accounts ua
-      WHERE (
-        (ua.clerk_id = ((SELECT auth.jwt()) ->> 'sub'))
-        OR
-        (ua.uuid = (SELECT auth.uid() AS uid))
-      )
-    )
-  );
+);
 
--- INSERT policy - Create new drafts
-CREATE POLICY "Users can insert their own drafts" ON email_drafts
-  FOR INSERT
-  WITH CHECK (
-    user_id IN (
-      SELECT ua.account_number
-      FROM user_accounts ua
-      WHERE (
-        (ua.clerk_id = ((SELECT auth.jwt()) ->> 'sub'))
-        OR
-        (ua.uuid = (SELECT auth.uid() AS uid))
-      )
-    )
-  );
-
--- DELETE policy - Delete own drafts
-CREATE POLICY "Users can delete their own drafts" ON email_drafts
-  FOR DELETE
-  USING (
-    user_id IN (
-      SELECT ua.account_number
-      FROM user_accounts ua
-      WHERE (
-        (ua.clerk_id = ((SELECT auth.jwt()) ->> 'sub'))
-        OR
-        (ua.uuid = (SELECT auth.uid() AS uid))
-      )
-    )
-  );
+COMMENT ON POLICY "Users can view their email drafts" ON email_drafts IS
+  'Allows users to view their email drafts via Clerk authentication';

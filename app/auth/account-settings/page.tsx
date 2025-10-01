@@ -16,8 +16,6 @@ export default function AccountSettingsPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [verifyEmail, setVerifyEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
 
   // Business profile state
@@ -29,11 +27,6 @@ export default function AccountSettingsPage() {
   const [businessZip, setBusinessZip] = useState("");
   const [businessUrl, setBusinessUrl] = useState("");
   const [businessProfileText, setBusinessProfileText] = useState("");
-
-  // Email change state
-  const [emailChangeMessage, setEmailChangeMessage] = useState("");
-  const [emailChangeError, setEmailChangeError] = useState("");
-  const [canChangeEmail, setCanChangeEmail] = useState(false);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -48,10 +41,6 @@ export default function AccountSettingsPage() {
       setEmail(user.primaryEmailAddress.emailAddress);
     }
   }, [user]);
-
-  useEffect(() => {
-    setCanChangeEmail(newEmail.length > 0 && verifyEmail.length > 0 && newEmail === verifyEmail);
-  }, [newEmail, verifyEmail]);
 
   // Address parsing function - matches email_site functionality exactly
   const parseBusinessAddress = (address: string) => {
@@ -187,54 +176,6 @@ export default function AccountSettingsPage() {
     }
   };
 
-  const handleChangeEmail = async () => {
-    setEmailChangeMessage("");
-    setEmailChangeError("");
-
-    // Validation checks matching email_site
-    if (!newEmail.trim()) {
-      setEmailChangeError("Please enter a new email address");
-      return;
-    }
-
-    if (!verifyEmail.trim()) {
-      setEmailChangeError("Please verify your new email address");
-      return;
-    }
-
-    if (newEmail !== verifyEmail) {
-      setEmailChangeError("Email addresses do not match");
-      return;
-    }
-
-    if (newEmail === email) {
-      setEmailChangeError("New email must be different from current email");
-      return;
-    }
-
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newEmail)) {
-      setEmailChangeError("Please enter a valid email address");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const { error } = await supabase.auth.updateUser({ email: newEmail });
-      if (error) throw error;
-
-      setEmailChangeMessage("A confirmation email has been sent to your new email address. Please check your email and click the confirmation link to complete the change.");
-      setNewEmail("");
-      setVerifyEmail("");
-    } catch (error: any) {
-      console.error('Error changing email:', error);
-      setEmailChangeError(error.message || "Failed to change email. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleGenerateProfile = async () => {
     setMessage("");
@@ -502,37 +443,6 @@ export default function AccountSettingsPage() {
               readOnly
               className="w-full rounded-lg border border-gray-300 px-4 py-3 bg-gray-50 text-gray-500"
             />
-
-            <div className="mt-4 space-y-2">
-              <input
-                type="email"
-                placeholder="New Email Address"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
-              />
-              <input
-                type="email"
-                placeholder="Verify New Email Address"
-                value={verifyEmail}
-                onChange={(e) => setVerifyEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
-              />
-              <button
-                type="button"
-                onClick={handleChangeEmail}
-                disabled={!canChangeEmail}
-                className="rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed bg-gray-500 text-white hover:bg-gray-600"
-              >
-                Change Email
-              </button>
-              {emailChangeMessage && (
-                <div className="text-sm text-green-600">{emailChangeMessage}</div>
-              )}
-              {emailChangeError && (
-                <div className="text-sm text-red-600">{emailChangeError}</div>
-              )}
-            </div>
           </div>
 
           <div className="mt-4">

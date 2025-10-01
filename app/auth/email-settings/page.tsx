@@ -22,6 +22,7 @@ export default function EmailSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error" | "">("");
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // Email settings state
   const [emailCurrentGoal, setEmailCurrentGoal] = useState("");
@@ -77,8 +78,11 @@ export default function EmailSettingsPage() {
         setEmailIncludeSig(data.email_include_sig || false);
         setEmailIncludeUnsub(data.email_include_unsub || false);
       }
+      // Mark data as loaded to enable auto-save
+      setIsDataLoaded(true);
     } catch (error) {
       console.error('Error loading email settings:', error);
+      setIsDataLoaded(true); // Still mark as loaded even on error
     }
   };
 
@@ -146,9 +150,9 @@ export default function EmailSettingsPage() {
     []
   );
 
-  // Auto-save when settings change
+  // Auto-save when settings change (only after initial data is loaded)
   useEffect(() => {
-    if (isLoaded && isSignedIn && userId) {
+    if (isLoaded && isSignedIn && userId && isDataLoaded) {
       const settings: EmailSettings = {
         email_current_goal: emailCurrentGoal,
         email_sig: emailSig,
@@ -157,7 +161,7 @@ export default function EmailSettingsPage() {
       };
       debouncedSave(settings);
     }
-  }, [emailCurrentGoal, emailSig, emailIncludeSig, emailIncludeUnsub, isLoaded, isSignedIn, userId, debouncedSave]);
+  }, [emailCurrentGoal, emailSig, emailIncludeSig, emailIncludeUnsub, isLoaded, isSignedIn, userId, isDataLoaded, debouncedSave]);
 
   const handleLogout = () => {
     window.location.href = "/sign-out";
