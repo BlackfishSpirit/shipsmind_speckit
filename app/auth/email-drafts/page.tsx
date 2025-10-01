@@ -26,7 +26,7 @@ export default function EmailDraftsPage() {
   const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [accountNumber, setAccountNumber] = useState<number | null>(null);
+  const [userAccountId, setUserAccountId] = useState<number | null>(null);
   const [emailDrafts, setEmailDrafts] = useState<EmailDraft[]>([]);
   const [selectedDrafts, setSelectedDrafts] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,10 +44,10 @@ export default function EmailDraftsPage() {
   }, [isLoaded, isSignedIn, userId]);
 
   useEffect(() => {
-    if (accountNumber) {
+    if (userAccountId) {
       loadEmailDrafts();
     }
-  }, [accountNumber, currentPage]);
+  }, [userAccountId, currentPage]);
 
   const fetchAccountNumber = async () => {
     if (!userId) return;
@@ -63,12 +63,12 @@ export default function EmailDraftsPage() {
 
       const { data: userData, error: userError } = await supabase
         .from('user_accounts')
-        .select('account_number')
+        .select('id')
         .eq('clerk_id', userId)
         .single();
 
       if (!userError && userData) {
-        setAccountNumber(userData.account_number);
+        setUserAccountId(userData.id);
       }
     } catch (error) {
       console.error('Error fetching account number:', error);
@@ -76,9 +76,9 @@ export default function EmailDraftsPage() {
   };
 
   const loadEmailDrafts = async () => {
-    console.log('loadEmailDrafts called with accountNumber:', accountNumber);
-    if (!accountNumber) {
-      console.log('No account number, returning early');
+    console.log('loadEmailDrafts called with userAccountId:', userAccountId);
+    if (!userAccountId) {
+      console.log('No user account ID, returning early');
       return;
     }
 
@@ -86,15 +86,23 @@ export default function EmailDraftsPage() {
     setError("");
 
     try {
+      // Get authenticated Supabase client
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       // Get total count
       const { count, error: countError } = await supabase
         .from('email_drafts')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', accountNumber);
+        .eq('user_id', userAccountId);
 
       if (countError) {
         console.error('Error getting record count:', countError);
-        console.error('Account number used for query:', accountNumber);
+        console.error('User account ID used for query:', userAccountId);
         console.error('Count error details:', JSON.stringify(countError, null, 2));
         setError(`Failed to get record count: ${countError.message}. Please try again.`);
         return;
@@ -111,16 +119,16 @@ export default function EmailDraftsPage() {
       const { data, error: fetchError } = await supabase
         .from('email_drafts')
         .select('id, lead_id, user_id, intro_goal, intro_date, intro_subject, intro_message, created_at')
-        .eq('user_id', accountNumber)
+        .eq('user_id', userAccountId)
         .order('created_at', { ascending: false })
         .range(from, to);
 
       if (fetchError) {
         console.error('Error loading email drafts:', fetchError);
-        console.error('Account number used for fetch query:', accountNumber);
+        console.error('User account ID used for fetch query:', userAccountId);
         console.error('Fetch error details:', JSON.stringify(fetchError, null, 2));
         console.error('Query parameters:', {
-          accountNumber,
+          userAccountId,
           currentPage,
           recordsPerPage,
           from,
@@ -134,22 +142,39 @@ export default function EmailDraftsPage() {
       let transformedData = data || [];
       if (data && data.length > 0) {
         const leadIds = data.map(draft => draft.lead_id).filter(Boolean);
+        console.log('Lead IDs from email_drafts:', leadIds);
+        console.log('Full draft data:', data);
+
         if (leadIds.length > 0) {
           const { data: leadsData, error: leadsError } = await supabase
             .from('serp_leads_v2')
             .select('id, title, address, email')
             .in('id', leadIds);
 
+          console.log('serp_leads_v2 query result:', {
+            dataCount: leadsData?.length || 0,
+            data: leadsData,
+            error: leadsError
+          });
+
           if (leadsError) {
             console.error('Error loading lead details:', leadsError);
-          } else {
-            const leadsMap = new Map((leadsData || []).map(lead => [lead.id, lead]));
-            transformedData = data.map(draft => ({
-              ...draft,
-              business_name: leadsMap.get(draft.lead_id)?.title,
-              address: leadsMap.get(draft.lead_id)?.address,
-              email: leadsMap.get(draft.lead_id)?.email
-            }));
+          } else if (leadsData && leadsData.length > 0) {
+            console.log('Successfully fetched leads data:', leadsData);
+            const leadsMap = new Map(leadsData.map(lead => [lead.id, lead]));
+            console.log('Leads map keys:', Array.from(leadsMap.keys()));
+
+            transformedData = data.map(draft => {
+              const leadInfo = leadsMap.get(draft.lead_id);
+              console.log(`Draft ${draft.id}: lead_id="${draft.lead_id}", matched lead:`, leadInfo);
+              return {
+                ...draft,
+                business_name: leadInfo?.title,
+                address: leadInfo?.address,
+                email: leadInfo?.email
+              };
+            });
+            console.log('Final transformed data:', transformedData);
           }
         }
       }
@@ -157,7 +182,7 @@ export default function EmailDraftsPage() {
       setEmailDrafts(transformedData);
     } catch (error) {
       console.error('Error loading email drafts (catch block):', error);
-      console.error('Account number in catch:', accountNumber);
+      console.error('User account ID in catch:', userAccountId);
       setError(`Failed to load email drafts (catch): ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setIsLoading(false);
@@ -255,8 +280,13 @@ export default function EmailDraftsPage() {
   const handleDownloadCSV = () => {
     if (!exportData) return;
 
+    // Add UTF-8 BOM (Byte Order Mark) to help Excel detect UTF-8 encoding
+    // This fixes the issue where apostrophes display as "â€™" in Excel
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + exportData.csvContent;
+
     // Create blob and trigger download
-    const blob = new Blob([exportData.csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
 
     // Check if browser supports the modern download method
     if (window.navigator && (window.navigator as any).msSaveOrOpenBlob) {
@@ -542,10 +572,6 @@ export default function EmailDraftsPage() {
         </div>
       )}
 
-      {/* Footer Info */}
-      <div className="text-sm text-gray-500 text-center">
-        Email drafts generated by the n8n workflow automation system.
-      </div>
     </div>
   );
 }

@@ -46,20 +46,6 @@ export default async function DashboardPage() {
           href: "/auth/serp-settings",
           icon: CogIcon,
           color: "bg-orange-500"
-        },
-        {
-          name: "Business Categories",
-          description: "Browse and select business categories for targeting",
-          href: "/auth/category-lookup",
-          icon: BuildingOfficeIcon,
-          color: "bg-blue-500"
-        },
-        {
-          name: "Location Lookup",
-          description: "Find and configure location codes for lead targeting",
-          href: "/auth/location-lookup",
-          icon: PresentationChartLineIcon,
-          color: "bg-green-600"
         }
       ]
     },
