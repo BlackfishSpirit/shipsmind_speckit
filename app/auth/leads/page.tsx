@@ -225,16 +225,34 @@ export default function LeadsPage() {
         }
       });
 
+      console.log('Webhook response status:', response.status);
+      console.log('Webhook response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Webhook error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result = await response.json();
-      console.log('Webhook response:', result);
+      // Try to parse JSON response, but don't fail if it's not JSON
+      let result;
+      const contentType = response.headers.get('content-type');
+      if (contentType?.includes('application/json')) {
+        result = await response.json();
+        console.log('Webhook JSON response:', result);
+      } else {
+        result = await response.text();
+        console.log('Webhook text response:', result);
+      }
 
       alert(`Successfully generated ${selectedLeads.size} email drafts!`);
       setSelectedLeads(new Set());
-      loadLeads(); // Reload to exclude newly drafted leads
+
+      // Wait a moment for the webhook to save drafts to the database
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Reload to exclude newly drafted leads
+      await loadLeads();
     } catch (error) {
       console.error('Error generating emails:', error);
       alert('Failed to generate emails. Please try again.');
@@ -327,6 +345,7 @@ export default function LeadsPage() {
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Address</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Phone</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Email</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Social Media</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Categories</th>
                   </tr>
                 </thead>
@@ -342,7 +361,38 @@ export default function LeadsPage() {
                       <td className="px-4 py-3 text-sm">{lead.title}</td>
                       <td className="px-4 py-3 text-sm">{lead.address}</td>
                       <td className="px-4 py-3 text-sm">{lead.phone}</td>
-                      <td className="px-4 py-3 text-sm">{lead.email}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {lead.email && lead.email !== 'EmailNotFound' ? lead.email : ''}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="flex space-x-2">
+                          {lead.facebook_url && lead.facebook_url !== 'FBNotFound' && (
+                            <a
+                              href={lead.facebook_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-700"
+                              title="Facebook"
+                            >
+                              FB
+                            </a>
+                          )}
+                          {lead.instagram_url && lead.instagram_url !== 'IGNotFound' && (
+                            <a
+                              href={lead.instagram_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-pink-600 hover:text-pink-700"
+                              title="Instagram"
+                            >
+                              IG
+                            </a>
+                          )}
+                          {(!lead.facebook_url || lead.facebook_url === 'FBNotFound') &&
+                           (!lead.instagram_url || lead.instagram_url === 'IGNotFound') &&
+                           ''}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm">{lead.categories}</td>
                     </tr>
                   ))}
