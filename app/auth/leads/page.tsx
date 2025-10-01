@@ -26,6 +26,7 @@ export default function LeadsPage() {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [userAccountId, setUserAccountId] = useState<number | null>(null);
   const [leads, setLeads] = useState<SerpLead[]>([]);
   const [showWithoutEmails, setShowWithoutEmails] = useState(false);
@@ -245,8 +246,12 @@ export default function LeadsPage() {
         console.log('Webhook text response:', result);
       }
 
-      alert(`Successfully generated ${selectedLeads.size} email drafts!`);
+      const count = selectedLeads.size;
+      setSuccessMessage(`Successfully generated ${count} email draft${count === 1 ? '' : 's'}!`);
       setSelectedLeads(new Set());
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
 
       // Wait a moment for the webhook to save drafts to the database
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -264,6 +269,13 @@ export default function LeadsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="mx-auto max-w-7xl">
+        {/* Success Message - Fixed Position */}
+        {successMessage && (
+          <div className="fixed top-4 right-4 z-50 rounded-lg bg-green-50 border border-green-200 p-4 text-green-800 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
+            {successMessage}
+          </div>
+        )}
+
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
           <p className="mt-2 text-gray-600">
