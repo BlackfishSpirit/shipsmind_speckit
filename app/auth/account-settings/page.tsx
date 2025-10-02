@@ -224,27 +224,26 @@ export default function AccountSettingsPage() {
         return;
       }
 
-      // Call the profile generation webhook
-      const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/81a5d1ac-c5c5-4cda-8baf-9da9d7729ee6';
-      const params = new URLSearchParams({
-        account_number: accountData.account_number,
-        alt_url: urlToUse
-      });
-
-      // Get Clerk token for webhook
+      // Get Clerk bearer token for webhook authentication
       const clerkToken = await getToken();
       if (!clerkToken) {
-        setError('Failed to get authentication token. Please sign in again.');
+        setError('Failed to get authentication token.');
         setIsLoading(false);
         return;
       }
 
+      // Call the profile generation webhook
+      const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/81a5d1ac-c5c5-4cda-8baf-9da9d7729ee6';
+      const params = new URLSearchParams({
+        account_number: accountData.account_number,
+        alt_url: "" // Send empty string - webhook uses business_url from user_accounts
+      });
+
       const response = await fetch(`${webhookUrl}?${params.toString()}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${clerkToken}`,
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${clerkToken}`
         }
       });
 
