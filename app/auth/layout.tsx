@@ -1,3 +1,7 @@
+// Force all auth pages to be dynamic (not statically generated)
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 export default function AuthLayout({
   children,
 }: {
