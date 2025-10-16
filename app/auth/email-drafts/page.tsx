@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import { useAuth } from '@clerk/nextjs';
+import { supabase, getAuthenticatedClient } from "@/lib/supabase/client";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
 interface EmailDraft {
   id: string;
@@ -20,58 +23,62 @@ interface EmailDraft {
 }
 
 export default function EmailDraftsPage() {
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [accountNumber, setAccountNumber] = useState<number | null>(null);
+  const [userAccountId, setUserAccountId] = useState<number | null>(null);
   const [emailDrafts, setEmailDrafts] = useState<EmailDraft[]>([]);
+  const [selectedDrafts, setSelectedDrafts] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [exportData, setExportData] = useState<{csvContent: string, filename: string} | null>(null);
   const recordsPerPage = 20;
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    if (isLoaded && !isSignedIn) {
+      window.location.href = "/sign-in";
+    } else if (isLoaded && isSignedIn && userId) {
+      fetchAccountNumber();
+    }
+  }, [isLoaded, isSignedIn, userId]);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (userAccountId) {
       loadEmailDrafts();
     }
-  }, [isAuthenticated, currentPage, accountNumber]);
+  }, [userAccountId, currentPage]);
 
-  const checkAuthStatus = async () => {
+  const fetchAccountNumber = async () => {
+    if (!userId) return;
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setIsAuthenticated(true);
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
 
-        // Get user's account number
-        const { data: userData, error: userError } = await supabase
-          .from('user_accounts')
-          .select('account_number')
-          .eq('uuid', session.user.id)
-          .single();
+      const { data: userData, error: userError } = await supabase
+        .from('user_accounts')
+        .select('id')
+        .eq('clerk_id', userId)
+        .single();
 
-        if (!userError && userData) {
-          setAccountNumber(userData.account_number);
-        }
-      } else {
-        window.location.href = "/auth";
+      if (!userError && userData) {
+        setUserAccountId(userData.id);
       }
     } catch (error) {
-      console.error('Error checking auth status:', error);
-      window.location.href = "/auth";
-    } finally {
-      setAuthLoading(false);
+      console.error('Error fetching account number:', error);
     }
   };
 
   const loadEmailDrafts = async () => {
-    console.log('loadEmailDrafts called with accountNumber:', accountNumber);
-    if (!accountNumber) {
-      console.log('No account number, returning early');
+    console.log('loadEmailDrafts called with userAccountId:', userAccountId);
+    if (!userAccountId) {
+      console.log('No user account ID, returning early');
       return;
     }
 
@@ -79,15 +86,23 @@ export default function EmailDraftsPage() {
     setError("");
 
     try {
+      // Get authenticated Supabase client
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       // Get total count
       const { count, error: countError } = await supabase
         .from('email_drafts')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', accountNumber);
+        .eq('user_id', userAccountId);
 
       if (countError) {
         console.error('Error getting record count:', countError);
-        console.error('Account number used for query:', accountNumber);
+        console.error('User account ID used for query:', userAccountId);
         console.error('Count error details:', JSON.stringify(countError, null, 2));
         setError(`Failed to get record count: ${countError.message}. Please try again.`);
         return;
@@ -104,16 +119,16 @@ export default function EmailDraftsPage() {
       const { data, error: fetchError } = await supabase
         .from('email_drafts')
         .select('id, lead_id, user_id, intro_goal, intro_date, intro_subject, intro_message, created_at')
-        .eq('user_id', accountNumber)
+        .eq('user_id', userAccountId)
         .order('created_at', { ascending: false })
         .range(from, to);
 
       if (fetchError) {
         console.error('Error loading email drafts:', fetchError);
-        console.error('Account number used for fetch query:', accountNumber);
+        console.error('User account ID used for fetch query:', userAccountId);
         console.error('Fetch error details:', JSON.stringify(fetchError, null, 2));
         console.error('Query parameters:', {
-          accountNumber,
+          userAccountId,
           currentPage,
           recordsPerPage,
           from,
@@ -127,22 +142,39 @@ export default function EmailDraftsPage() {
       let transformedData = data || [];
       if (data && data.length > 0) {
         const leadIds = data.map(draft => draft.lead_id).filter(Boolean);
+        console.log('Lead IDs from email_drafts:', leadIds);
+        console.log('Full draft data:', data);
+
         if (leadIds.length > 0) {
           const { data: leadsData, error: leadsError } = await supabase
             .from('serp_leads_v2')
             .select('id, title, address, email')
             .in('id', leadIds);
 
+          console.log('serp_leads_v2 query result:', {
+            dataCount: leadsData?.length || 0,
+            data: leadsData,
+            error: leadsError
+          });
+
           if (leadsError) {
             console.error('Error loading lead details:', leadsError);
-          } else {
-            const leadsMap = new Map((leadsData || []).map(lead => [lead.id, lead]));
-            transformedData = data.map(draft => ({
-              ...draft,
-              business_name: leadsMap.get(draft.lead_id)?.title,
-              address: leadsMap.get(draft.lead_id)?.address,
-              email: leadsMap.get(draft.lead_id)?.email
-            }));
+          } else if (leadsData && leadsData.length > 0) {
+            console.log('Successfully fetched leads data:', leadsData);
+            const leadsMap = new Map(leadsData.map(lead => [lead.id, lead]));
+            console.log('Leads map keys:', Array.from(leadsMap.keys()));
+
+            transformedData = data.map(draft => {
+              const leadInfo = leadsMap.get(draft.lead_id);
+              console.log(`Draft ${draft.id}: lead_id="${draft.lead_id}", matched lead:`, leadInfo);
+              return {
+                ...draft,
+                business_name: leadInfo?.title,
+                address: leadInfo?.address,
+                email: leadInfo?.email
+              };
+            });
+            console.log('Final transformed data:', transformedData);
           }
         }
       }
@@ -150,18 +182,15 @@ export default function EmailDraftsPage() {
       setEmailDrafts(transformedData);
     } catch (error) {
       console.error('Error loading email drafts (catch block):', error);
-      console.error('Account number in catch:', accountNumber);
+      console.error('User account ID in catch:', userAccountId);
       setError(`Failed to load email drafts (catch): ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
-      window.location.href = "/auth";
-    }
+  const handleLogout = () => {
+    window.location.href = "/sign-out";
   };
 
   const formatDate = (dateString?: string) => {
@@ -175,12 +204,132 @@ export default function EmailDraftsPage() {
     });
   };
 
-  if (authLoading || !isAuthenticated) {
+  const handleSelectDraft = (draftId: string) => {
+    setSelectedDrafts(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(draftId)) {
+        newSelection.delete(draftId);
+      } else {
+        newSelection.add(draftId);
+      }
+      return newSelection;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const allSelected = emailDrafts.every(draft => selectedDrafts.has(draft.id));
+
+    if (allSelected) {
+      // Deselect all
+      setSelectedDrafts(new Set());
+    } else {
+      // Select all drafts
+      const newSelection = new Set(selectedDrafts);
+      emailDrafts.forEach(draft => {
+        newSelection.add(draft.id);
+      });
+      setSelectedDrafts(newSelection);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedDrafts(new Set());
+  };
+
+  const handleExportSelected = () => {
+    if (selectedDrafts.size === 0) {
+      alert('Please select drafts first');
+      return;
+    }
+
+    // Filter selected drafts
+    const selectedDraftData = emailDrafts.filter(draft => selectedDrafts.has(draft.id));
+
+    // Get current timestamp (safe filename format)
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+
+    // Use a default user business name (could be fetched from user profile in the future)
+    const userBusinessName = 'Blackfish_Spirits'; // This should ideally come from user account data
+
+    console.log('Export filename will be:', `${userBusinessName}_email_drafts_${timestamp}.csv`);
+
+    // Create CSV headers
+    const headers = ['Business Name', 'Email', 'Subject', 'Message', 'Goal', 'Created Date'];
+
+    // Create CSV rows
+    const csvRows = [
+      headers.join(','),
+      ...selectedDraftData.map(draft => [
+        `"${(draft.business_name || '').replace(/"/g, '""')}"`,
+        `"${(draft.email || '').replace(/"/g, '""')}"`,
+        `"${(draft.intro_subject || '').replace(/"/g, '""')}"`,
+        `"${(draft.intro_message || '').replace(/"/g, '""')}"`,
+        `"${(draft.intro_goal || '').replace(/"/g, '""')}"`,
+        `"${formatDate(draft.created_at)}"`
+      ].join(','))
+    ];
+
+    // Prepare CSV data for download button
+    const csvContent = csvRows.join('\n');
+    const filename = `${userBusinessName}_email_drafts_${timestamp}.csv`;
+
+    // Set export data to show download button
+    setExportData({ csvContent, filename });
+  };
+
+  const handleDownloadCSV = () => {
+    if (!exportData) return;
+
+    // Add UTF-8 BOM (Byte Order Mark) to help Excel detect UTF-8 encoding
+    // This fixes the issue where apostrophes display as "â€™" in Excel
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + exportData.csvContent;
+
+    // Create blob and trigger download
+    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
+
+    // Check if browser supports the modern download method
+    if (window.navigator && (window.navigator as any).msSaveOrOpenBlob) {
+      // IE/Edge legacy support
+      (window.navigator as any).msSaveOrOpenBlob(blob, exportData.filename);
+    } else {
+      // Modern browsers
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      // Set multiple attributes to ensure filename is preserved
+      link.href = url;
+      link.download = exportData.filename;
+      link.setAttribute('download', exportData.filename);
+      link.style.display = 'none';
+      link.style.visibility = 'hidden';
+
+      // Ensure the link is added to DOM before clicking
+      document.body.appendChild(link);
+
+      // Small delay to ensure the link is properly attached
+      setTimeout(() => {
+        link.click();
+
+        // Clean up after a short delay
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }, 100);
+      }, 10);
+    }
+
+    // Clear export data and selection after download
+    setExportData(null);
+    clearSelection();
+  };
+
+  if (!isLoaded || !isSignedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {authLoading ? "Loading..." : "Checking authentication..."}
+            {!isLoaded ? "Loading..." : "Checking authentication..."}
           </h2>
         </div>
       </div>
@@ -214,6 +363,62 @@ export default function EmailDraftsPage() {
         </div>
       )}
 
+      {/* Selection Controls */}
+      {emailDrafts.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleSelectAll}
+                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                {emailDrafts.every(draft => selectedDrafts.has(draft.id))
+                  ? 'Deselect All'
+                  : 'Select All'}
+              </button>
+              {selectedDrafts.size > 0 && (
+                <button
+                  onClick={clearSelection}
+                  className="text-sm font-medium text-gray-600 hover:text-gray-700"
+                >
+                  Clear Selection
+                </button>
+              )}
+              {selectedDrafts.size > 0 && !exportData && (
+                <Button
+                  onClick={handleExportSelected}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  size="sm"
+                >
+                  Export Selected Drafts ({selectedDrafts.size})
+                </Button>
+              )}
+              {exportData && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={handleDownloadCSV}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
+                  >
+                    Download CSV ({exportData.filename})
+                  </Button>
+                  <Button
+                    onClick={() => setExportData(null)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="text-sm text-gray-700">
+              <strong>{selectedDrafts.size}</strong> drafts selected
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Email Drafts Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -242,6 +447,9 @@ export default function EmailDraftsPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-4 py-3 text-center font-semibold text-gray-900 w-12">
+                    Select
+                  </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
                     Business
                   </th>
@@ -249,44 +457,62 @@ export default function EmailDraftsPage() {
                     Subject
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                    Goal
+                    Message Preview
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                    Message Preview
+                    Goal
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {emailDrafts.map((draft) => (
-                  <tr key={draft.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-900">
-                          {draft.business_name || 'Unknown Business'}
-                        </div>
-                        <div className="text-gray-500 truncate max-w-xs">
-                          {draft.address || '-'}
-                        </div>
-                        {draft.email && (
-                          <div className="text-brand-600 text-xs">
-                            {draft.email}
+                {emailDrafts.map((draft) => {
+                  const isSelected = selectedDrafts.has(draft.id);
+
+                  return (
+                    <tr
+                      key={draft.id}
+                      className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}
+                    >
+                      <td className="px-4 py-3 text-center">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            if (typeof checked === 'boolean') {
+                              handleSelectDraft(draft.id);
+                            }
+                          }}
+                          className="mx-auto"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-900">
+                            {draft.business_name || 'Unknown Business'}
                           </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {draft.intro_subject || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {draft.intro_goal || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      <div className="max-w-sm whitespace-pre-wrap break-words">
-                        {draft.intro_message || '-'}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <div className="text-gray-500 truncate max-w-xs">
+                            {draft.address || '-'}
+                          </div>
+                          {draft.email && (
+                            <div className="text-brand-600 text-xs">
+                              {draft.email}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {draft.intro_subject || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        <div className="max-w-sm whitespace-pre-wrap break-words">
+                          {draft.intro_message || '-'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {draft.intro_goal || '-'}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -346,10 +572,6 @@ export default function EmailDraftsPage() {
         </div>
       )}
 
-      {/* Footer Info */}
-      <div className="text-sm text-gray-500 text-center">
-        Email drafts generated by the n8n workflow automation system.
-      </div>
     </div>
   );
 }

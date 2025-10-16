@@ -56,7 +56,7 @@ export function HeroSection() {
             <Button
               variant="outline"
               size="xl"
-              className="border-gray-600 px-8 py-4 text-lg font-semibold text-gray-300 transition-all duration-300 hover:border-spinx-lime hover:bg-gray-800 hover:text-spinx-lime"
+              className="bg-transparent border-spinx-lime/50 px-8 py-4 text-lg font-semibold text-spinx-lime transition-all duration-300 hover:border-spinx-lime hover:bg-spinx-lime hover:text-black"
               onClick={() => {
                 // TODO: Scroll to solutions section
                 document

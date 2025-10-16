@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import { useAuth, useUser } from '@clerk/nextjs';
+import { getAuthenticatedClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,12 +16,13 @@ interface EmailSettings {
 }
 
 export default function EmailSettingsPage() {
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error" | "">("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // Email settings state
   const [emailCurrentGoal, setEmailCurrentGoal] = useState("");
@@ -32,8 +34,12 @@ export default function EmailSettingsPage() {
   const isSignatureEmpty = !emailSig || !emailSig.trim();
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
+    if (isLoaded && !isSignedIn) {
+      window.location.href = "/sign-in";
+    } else if (isLoaded && isSignedIn && userId) {
+      loadEmailSettings();
+    }
+  }, [isLoaded, isSignedIn, userId]);
 
   // Auto-uncheck signature checkbox when signature becomes empty
   useEffect(() => {
@@ -42,12 +48,23 @@ export default function EmailSettingsPage() {
     }
   }, [isSignatureEmpty, emailIncludeSig]);
 
-  const loadEmailSettings = async (userId: string) => {
+  const loadEmailSettings = async () => {
+    if (!userId) return;
+
     try {
+      // Get authenticated Supabase client with Clerk token
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       const { data, error } = await supabase
         .from('user_accounts')
         .select('email_current_goal, email_sig, email_include_sig, email_include_unsub')
-        .eq('uuid', userId)
+        .eq('clerk_id', userId)
         .single();
 
       if (error) {
@@ -61,25 +78,11 @@ export default function EmailSettingsPage() {
         setEmailIncludeSig(data.email_include_sig || false);
         setEmailIncludeUnsub(data.email_include_unsub || false);
       }
+      // Mark data as loaded to enable auto-save
+      setIsDataLoaded(true);
     } catch (error) {
       console.error('Error loading email settings:', error);
-    }
-  };
-
-  const checkAuthStatus = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setIsAuthenticated(true);
-        await loadEmailSettings(session.user.id);
-      } else {
-        window.location.href = "/auth";
-      }
-    } catch (error) {
-      console.error('Error checking auth status:', error);
-      window.location.href = "/auth";
-    } finally {
-      setAuthLoading(false);
+      setIsDataLoaded(true); // Still mark as loaded even on error
     }
   };
 
@@ -94,12 +97,20 @@ export default function EmailSettingsPage() {
 
         timeoutId = setTimeout(async () => {
           try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.user) {
+            if (!userId) {
               setSaveStatus("error");
               setError('Please log in first');
               return;
             }
+
+            // Get authenticated Supabase client with Clerk token
+            const token = await getToken({ template: 'supabase' });
+            if (!token) {
+              setSaveStatus("error");
+              setError('Authentication failed. Please sign in again.');
+              return;
+            }
+            const supabase = getAuthenticatedClient(token);
 
             const { error } = await supabase
               .from('user_accounts')
@@ -109,7 +120,7 @@ export default function EmailSettingsPage() {
                 email_include_sig: settings.email_include_sig,
                 email_include_unsub: settings.email_include_unsub
               })
-              .eq('uuid', session.user.id);
+              .eq('clerk_id', userId);
 
             if (error) {
               console.error('Error saving email settings:', error);
@@ -139,9 +150,9 @@ export default function EmailSettingsPage() {
     []
   );
 
-  // Auto-save when settings change
+  // Auto-save when settings change (only after initial data is loaded)
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
+    if (isLoaded && isSignedIn && userId && isDataLoaded) {
       const settings: EmailSettings = {
         email_current_goal: emailCurrentGoal,
         email_sig: emailSig,
@@ -150,21 +161,18 @@ export default function EmailSettingsPage() {
       };
       debouncedSave(settings);
     }
-  }, [emailCurrentGoal, emailSig, emailIncludeSig, emailIncludeUnsub, isAuthenticated, authLoading, debouncedSave]);
+  }, [emailCurrentGoal, emailSig, emailIncludeSig, emailIncludeUnsub, isLoaded, isSignedIn, userId, isDataLoaded, debouncedSave]);
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
-      window.location.href = "/auth";
-    }
+  const handleLogout = () => {
+    window.location.href = "/sign-out";
   };
 
-  if (authLoading || !isAuthenticated) {
+  if (!isLoaded || !isSignedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {authLoading ? "Loading..." : "Checking authentication..."}
+            {!isLoaded ? "Loading..." : "Checking authentication..."}
           </h2>
         </div>
       </div>

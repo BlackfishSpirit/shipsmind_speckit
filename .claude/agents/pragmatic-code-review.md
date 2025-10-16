@@ -141,6 +141,19 @@ You will analyze code changes using this prioritized checklist:
 
 You have access to multiple MCP servers to enhance your code review capabilities:
 
+- **Chrome DevTools MCP**: Browser-based testing and UI validation
+  - Test web application behavior in real browser environment
+  - Validate UI components and user interactions
+  - Capture screenshots for visual regression testing
+  - Monitor network requests and API integration
+  - Inspect browser console for JavaScript errors and warnings
+  - Test responsive behavior across different viewports
+  - Validate form submissions and client-side validation
+  - Measure Core Web Vitals and performance metrics
+  - Debug client-side rendering and state management issues
+
+  **Use Cases**: Frontend code reviews, UI component validation, client-side performance testing, JavaScript error detection, API integration verification
+
 - **Supabase MCP**: Database analysis and backend development guidance
   - Analyze database schema structure and relationships
   - Generate optimized SQL queries for data exploration

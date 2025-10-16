@@ -88,7 +88,7 @@ export function SolutionsOverview() {
                     <Button
                       asChild
                       variant="outline"
-                      className="w-full border-gray-600 text-xs font-semibold uppercase tracking-wide text-gray-300 transition-all duration-300 hover:border-spinx-lime hover:bg-spinx-lime hover:text-black group-hover:border-spinx-lime group-hover:bg-spinx-lime group-hover:text-black"
+                      className="w-full bg-transparent border-spinx-lime/50 text-xs font-semibold uppercase tracking-wide text-spinx-lime transition-all duration-300 hover:border-spinx-lime hover:bg-spinx-lime hover:text-black group-hover:border-spinx-lime group-hover:bg-spinx-lime group-hover:text-black"
                     >
                       <Link href={solution.href}>
                         Learn More

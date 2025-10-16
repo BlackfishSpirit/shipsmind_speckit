@@ -2,21 +2,20 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import { useAuth, useUser } from '@clerk/nextjs';
+import { supabase, getAuthenticatedClient } from "@/lib/supabase/client";
 
 export default function AccountSettingsPage() {
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
 
   // User profile state
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [verifyEmail, setVerifyEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
 
   // Business profile state
@@ -29,18 +28,19 @@ export default function AccountSettingsPage() {
   const [businessUrl, setBusinessUrl] = useState("");
   const [businessProfileText, setBusinessProfileText] = useState("");
 
-  // Email change state
-  const [emailChangeMessage, setEmailChangeMessage] = useState("");
-  const [emailChangeError, setEmailChangeError] = useState("");
-  const [canChangeEmail, setCanChangeEmail] = useState(false);
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      window.location.href = "/sign-in";
+    } else if (isLoaded && isSignedIn && userId) {
+      loadUserProfile();
+    }
+  }, [isLoaded, isSignedIn, userId]);
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  useEffect(() => {
-    setCanChangeEmail(newEmail.length > 0 && verifyEmail.length > 0 && newEmail === verifyEmail);
-  }, [newEmail, verifyEmail]);
+    if (user?.primaryEmailAddress?.emailAddress) {
+      setEmail(user.primaryEmailAddress.emailAddress);
+    }
+  }, [user]);
 
   // Address parsing function - matches email_site functionality exactly
   const parseBusinessAddress = (address: string) => {
@@ -64,12 +64,22 @@ export default function AccountSettingsPage() {
     return { street, city, state, zip };
   };
 
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = async () => {
+    if (!userId) return;
+
     try {
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       const { data, error } = await supabase
         .from('user_accounts')
         .select('*')
-        .eq('uuid', userId)
+        .eq('clerk_id', userId)
         .single();
 
       if (error) {
@@ -110,23 +120,6 @@ export default function AccountSettingsPage() {
     }
   };
 
-  const checkAuthStatus = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setIsAuthenticated(true);
-        setEmail(session.user.email || "");
-        await loadUserProfile(session.user.id);
-      } else {
-        window.location.href = "/auth";
-      }
-    } catch (error) {
-      console.error('Error checking auth status:', error);
-      window.location.href = "/auth";
-    } finally {
-      setAuthLoading(false);
-    }
-  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,11 +128,17 @@ export default function AccountSettingsPage() {
     setMessage("");
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
+      if (!userId) {
         setError('Please log in first');
         return;
       }
+
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
 
       // Create concatenated business address in email_site format: "Street. City, State Zip"
       let concatenatedAddress = '';
@@ -158,7 +157,7 @@ export default function AccountSettingsPage() {
           business_url: businessUrl.trim() || null,
           business_profile: businessProfileText.trim() || null
         })
-        .eq('uuid', session.user.id);
+        .eq('clerk_id', userId);
 
       if (error) {
         console.error('Error saving profile:', error);
@@ -177,54 +176,6 @@ export default function AccountSettingsPage() {
     }
   };
 
-  const handleChangeEmail = async () => {
-    setEmailChangeMessage("");
-    setEmailChangeError("");
-
-    // Validation checks matching email_site
-    if (!newEmail.trim()) {
-      setEmailChangeError("Please enter a new email address");
-      return;
-    }
-
-    if (!verifyEmail.trim()) {
-      setEmailChangeError("Please verify your new email address");
-      return;
-    }
-
-    if (newEmail !== verifyEmail) {
-      setEmailChangeError("Email addresses do not match");
-      return;
-    }
-
-    if (newEmail === email) {
-      setEmailChangeError("New email must be different from current email");
-      return;
-    }
-
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newEmail)) {
-      setEmailChangeError("Please enter a valid email address");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const { error } = await supabase.auth.updateUser({ email: newEmail });
-      if (error) throw error;
-
-      setEmailChangeMessage("A confirmation email has been sent to your new email address. Please check your email and click the confirmation link to complete the change.");
-      setNewEmail("");
-      setVerifyEmail("");
-    } catch (error: any) {
-      console.error('Error changing email:', error);
-      setEmailChangeError(error.message || "Failed to change email. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleGenerateProfile = async () => {
     setMessage("");
@@ -245,20 +196,25 @@ export default function AccountSettingsPage() {
     }
 
     try {
-      // Get the current session
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
+      if (!userId) {
         setError('Please log in first');
         setIsLoading(false);
         return;
       }
 
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       // Get account number for webhook call
       const { data: accountData, error: accountError } = await supabase
         .from('user_accounts')
         .select('account_number')
-        .eq('uuid', session.user.id)
+        .eq('clerk_id', userId)
         .single();
 
       if (accountError || !accountData?.account_number) {
@@ -268,19 +224,26 @@ export default function AccountSettingsPage() {
         return;
       }
 
+      // Get Clerk bearer token for webhook authentication
+      const clerkToken = await getToken();
+      if (!clerkToken) {
+        setError('Failed to get authentication token.');
+        setIsLoading(false);
+        return;
+      }
+
       // Call the profile generation webhook
-      const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/54f613d0-40f2-4f1c-9a8a-70f0ac45416f';
+      const webhookUrl = 'https://blackfish.app.n8n.cloud/webhook/81a5d1ac-c5c5-4cda-8baf-9da9d7729ee6';
       const params = new URLSearchParams({
         account_number: accountData.account_number,
-        alt_url: urlToUse
+        alt_url: "" // Send empty string - webhook uses business_url from user_accounts
       });
 
       const response = await fetch(`${webhookUrl}?${params.toString()}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
           'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${clerkToken}`
         }
       });
 
@@ -310,14 +273,20 @@ export default function AccountSettingsPage() {
   };
 
   const refreshBusinessProfile = async () => {
+    if (!userId) return;
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
 
       const { data, error } = await supabase
         .from('user_accounts')
         .select('business_profile')
-        .eq('uuid', session.user.id)
+        .eq('clerk_id', userId)
         .single();
 
       if (error) {
@@ -345,19 +314,26 @@ export default function AccountSettingsPage() {
     setIsLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!userId) {
         setError('Please log in first');
         setIsLoading(false);
         return;
       }
+
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
 
       const { error } = await supabase
         .from('user_accounts')
         .update({
           business_profile: businessProfileText
         })
-        .eq('uuid', session.user.id);
+        .eq('clerk_id', userId);
 
       if (error) {
         console.error('Error updating business profile:', error);
@@ -374,19 +350,16 @@ export default function AccountSettingsPage() {
     }
   };
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
-      window.location.href = "/auth";
-    }
+  const handleLogout = () => {
+    window.location.href = "/sign-out";
   };
 
-  if (authLoading || !isAuthenticated) {
+  if (!isLoaded || !isSignedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {authLoading ? "Loading..." : "Checking authentication..."}
+            {!isLoaded ? "Loading..." : "Checking authentication..."}
           </h2>
         </div>
       </div>
@@ -469,37 +442,6 @@ export default function AccountSettingsPage() {
               readOnly
               className="w-full rounded-lg border border-gray-300 px-4 py-3 bg-gray-50 text-gray-500"
             />
-
-            <div className="mt-4 space-y-2">
-              <input
-                type="email"
-                placeholder="New Email Address"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
-              />
-              <input
-                type="email"
-                placeholder="Verify New Email Address"
-                value={verifyEmail}
-                onChange={(e) => setVerifyEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-brand-500 focus:ring-brand-500"
-              />
-              <button
-                type="button"
-                onClick={handleChangeEmail}
-                disabled={!canChangeEmail}
-                className="rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed bg-gray-500 text-white hover:bg-gray-600"
-              >
-                Change Email
-              </button>
-              {emailChangeMessage && (
-                <div className="text-sm text-green-600">{emailChangeMessage}</div>
-              )}
-              {emailChangeError && (
-                <div className="text-sm text-red-600">{emailChangeError}</div>
-              )}
-            </div>
           </div>
 
           <div className="mt-4">

@@ -113,6 +113,17 @@ Phase 3 - Vulnerability Assessment:
 - Look for privilege boundaries being crossed unsafely
 - Identify injection points and unsafe deserialization
 
+Phase 4 - Browser-Based Security Testing (for client-side vulnerabilities):
+
+- **Use Chrome DevTools MCP** to test XSS vulnerabilities in live browser environment
+- Test reflected and stored XSS by injecting payloads through forms and URL parameters
+- Monitor network requests for sensitive data leakage or insecure API calls
+- Inspect browser console for JavaScript errors that might expose security issues
+- Test CSP (Content Security Policy) implementation and bypasses
+- Validate input sanitization in client-side rendering
+- Check for DOM-based XSS vulnerabilities in JavaScript code
+- Test authentication and authorization flows in browser
+
 REQUIRED OUTPUT FORMAT:
 
 You MUST output your findings in markdown. The markdown output should contain the file, line number, severity, category (e.g. `sql_injection` or `xss`), description, exploit scenario, and fix recommendation.

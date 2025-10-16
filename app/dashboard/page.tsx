@@ -41,18 +41,11 @@ export default async function DashboardPage() {
           color: "bg-cyan-500"
         },
         {
-          name: "Business Categories",
-          description: "Browse and select business categories for targeting",
-          href: "/auth/category-lookup",
-          icon: BuildingOfficeIcon,
-          color: "bg-blue-500"
-        },
-        {
-          name: "Location Lookup",
-          description: "Find and configure location codes for lead targeting",
-          href: "/auth/location-lookup",
-          icon: PresentationChartLineIcon,
-          color: "bg-green-600"
+          name: "SERP Settings",
+          description: "Configure search keywords and parameters for lead generation",
+          href: "/auth/serp-settings",
+          icon: CogIcon,
+          color: "bg-orange-500"
         }
       ]
     },
@@ -181,6 +174,12 @@ export default async function DashboardPage() {
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 View Leads
+              </Link>
+              <Link
+                href="/auth/serp-settings"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-200 hover:bg-blue-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                SERP Settings
               </Link>
               <Link
                 href="/auth/email-drafts"

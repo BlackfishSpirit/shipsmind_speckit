@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase/client";
+import { useAuth } from '@clerk/nextjs';
+import { supabase, getAuthenticatedClient } from "@/lib/supabase/client";
 
 export default function ProfileSetupPage() {
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
 
   // Step 1: Basic Information
   const [firstName, setFirstName] = useState("");
@@ -26,24 +26,10 @@ export default function ProfileSetupPage() {
   const [businessProfileText, setBusinessProfileText] = useState("");
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setIsAuthenticated(true);
-      } else {
-        window.location.href = "/auth";
-      }
-    } catch (error) {
-      console.error('Error checking auth status:', error);
-      window.location.href = "/auth";
-    } finally {
-      setAuthLoading(false);
+    if (isLoaded && !isSignedIn) {
+      window.location.href = "/sign-in";
     }
-  };
+  }, [isLoaded, isSignedIn]);
 
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,20 +60,25 @@ export default function ProfileSetupPage() {
     }
 
     try {
-      // Get the current session
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
+      if (!userId) {
         setError('Please log in first');
         setIsLoading(false);
         return;
       }
 
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
+
       // Get account number for webhook call
       const { data: accountData, error: accountError } = await supabase
         .from('user_accounts')
         .select('account_number')
-        .eq('uuid', session.user.id)
+        .eq('clerk_id', userId)
         .single();
 
       if (accountError || !accountData?.account_number) {
@@ -104,10 +95,18 @@ export default function ProfileSetupPage() {
         alt_url: ''
       });
 
+      // Get Clerk token for webhook
+      const clerkToken = await getToken();
+      if (!clerkToken) {
+        setError('Failed to get authentication token. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch(`${webhookUrl}?${params.toString()}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${clerkToken}`,
           'Accept': 'application/json'
         }
       });
@@ -132,14 +131,20 @@ export default function ProfileSetupPage() {
   };
 
   const refreshBusinessProfile = async () => {
+    if (!userId) return;
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('Failed to get Clerk token');
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
 
       const { data, error } = await supabase
         .from('user_accounts')
         .select('business_profile')
-        .eq('uuid', session.user.id)
+        .eq('clerk_id', userId)
         .single();
 
       if (error) {
@@ -164,19 +169,26 @@ export default function ProfileSetupPage() {
     setIsLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!userId) {
         setError('Please log in first');
         setIsLoading(false);
         return;
       }
+
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        setError('Authentication failed. Please sign in again.');
+        setIsLoading(false);
+        return;
+      }
+      const supabase = getAuthenticatedClient(token);
 
       const { error } = await supabase
         .from('user_accounts')
         .update({
           business_profile: businessProfileText
         })
-        .eq('uuid', session.user.id);
+        .eq('clerk_id', userId);
 
       if (error) {
         console.error('Error updating business profile:', error);
@@ -205,12 +217,12 @@ export default function ProfileSetupPage() {
     }
   };
 
-  if (authLoading || !isAuthenticated) {
+  if (!isLoaded || !isSignedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            {authLoading ? "Loading..." : "Checking authentication..."}
+            {!isLoaded ? "Loading..." : "Checking authentication..."}
           </h2>
         </div>
       </div>
