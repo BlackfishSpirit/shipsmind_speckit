@@ -37,6 +37,10 @@ The Semgrep MCP server provides security scanning capabilities using Semgrep's r
     "chrome-devtools": {
       "command": "npx",
       "args": ["-y", "chrome-devtools-mcp@latest"]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["-y", "@jpisnice/shadcn-ui-mcp-server"]
     }
   }
 }
@@ -161,6 +165,43 @@ N8N_API_KEY=your_n8n_api_key
 - Search and import workflow templates
 - Manage webhook endpoints and triggers
 
+### shadcn/ui Component Integration
+
+The shadcn MCP server provides direct integration with shadcn/ui component library for modern UI development.
+
+#### Features:
+- Direct access to shadcn/ui component library
+- Component installation and configuration
+- Theme and styling system integration
+- Component documentation and examples
+- Automatic dependency management
+- TypeScript support out of the box
+
+#### Usage:
+The shadcn MCP server enables:
+- **Component Discovery**: Browse and search available shadcn/ui components
+- **Component Installation**: Add shadcn/ui components to your project
+- **Configuration**: Set up shadcn/ui with proper theme configuration
+- **Documentation**: Access component API and usage examples
+- **Best Practices**: Learn recommended patterns for shadcn/ui components
+- **Theme Customization**: Configure colors, typography, and design tokens
+
+#### Example Configuration:
+```json
+"shadcn": {
+  "command": "npx",
+  "args": ["-y", "@jpisnice/shadcn-ui-mcp-server"]
+}
+```
+
+#### When to Use shadcn MCP:
+- Building new UI components from scratch
+- Converting designs to production-ready components
+- Ensuring consistent component architecture
+- Implementing accessible UI patterns
+- Setting up design system foundations
+- Creating reusable component libraries
+
 ## Agent MCP Integration Guidelines
 
 ### How Agents Use MCP Servers
@@ -216,6 +257,30 @@ All agents and sub-agents in this project have access to the configured MCP serv
 - Researching component usage
 - Understanding modern web development patterns
 
+#### shadcn MCP - UI Component Development
+**Primary Use Cases:**
+- **Design Workflow Agents**: Component implementation, design system integration
+- **Design Review Agents**: Component architecture validation, accessibility compliance
+- **Code Review Agents**: UI component quality, shadcn/ui best practices validation
+- **Feature Documentation**: Component API documentation, usage examples
+
+**When to Use:**
+- **REQUIRED for all web design work**: Any agent building UI components must use shadcn MCP
+- Implementing new UI components or pages
+- Converting design mockups to production code
+- Setting up or modifying component themes
+- Creating reusable component patterns
+- Ensuring accessible component implementation
+- Validating component architecture and structure
+- Building design system foundations
+
+**Design Agent Requirements:**
+- All design workflow agents MUST use shadcn MCP for component implementation
+- Before creating custom components, check shadcn MCP for existing solutions
+- Use shadcn MCP tools to ensure proper component configuration
+- Validate component accessibility using shadcn patterns
+- Follow shadcn/ui conventions for theme and styling
+
 ## Security Review Agent Configuration
 
 ### Security-Focused Code Review Agent
@@ -252,7 +317,7 @@ Use this agent for comprehensive security analysis that integrates Semgrep scann
 
 ### Design Agent with Speckit Integration
 
-A specialized agent for front-end design workflows that integrates with the project's workflow system:
+A specialized agent for front-end design workflows that integrates with the project's workflow system and **MUST use shadcn MCP** for all UI component work.
 
 ```json
 {
@@ -260,32 +325,56 @@ A specialized agent for front-end design workflows that integrates with the proj
   "description": "Front-end design specialist with SuperDesign and speckit integration",
   "capabilities": [
     "SuperDesign workflow management",
-    "shadcn MCP component integration",
+    "shadcn MCP component integration (REQUIRED)",
     "TweakCN theme customization",
     "Accessibility compliance",
     "Speckit workflow integration"
+  ],
+  "required_mcp_servers": [
+    "shadcn",
+    "chrome-devtools",
+    "context7"
   ]
 }
 ```
 
+#### Design Agent MCP Usage Requirements:
+1. **shadcn MCP** (REQUIRED): Use for all component implementation and UI development
+   - Check available shadcn/ui components before creating custom solutions
+   - Use shadcn MCP tools to install and configure components
+   - Follow shadcn/ui patterns for consistent architecture
+   - Validate accessibility using shadcn component standards
+
+2. **Chrome DevTools MCP**: Use for visual testing and responsive design validation
+   - Capture screenshots of design implementations
+   - Test responsive behavior across viewports
+   - Validate accessibility in real browser environment
+
+3. **Context7 MCP**: Use for framework documentation and best practices
+   - Reference latest React/Next.js patterns
+   - Validate modern web development approaches
+
 #### Design Workflow Commands:
 ```
-# Start new design project
+# Start new design project with shadcn MCP integration
 /design-start "Brief description of what you want to design"
 
-# Launch design workflow agent
-/design-agent "Design brief or specific design request"
+# Launch design workflow agent (automatically uses shadcn MCP)
+/design-agent "Design brief or specific design request. MUST use shadcn MCP for component implementation."
 
 # Review design quality and implementation readiness
-/design-review "Review my current design for [specific aspects]"
+/design-review "Review my current design for [specific aspects]. Validate shadcn/ui component usage and accessibility."
 
 # Phase-specific commands
-/design-layout "Create layout iterations for [component/page description]"
-/design-theme "Apply theme variations with [color palette/design language]"
-/design-implement "Add interactivity and animations to the design"
+/design-layout "Create layout iterations for [component/page description]. Use shadcn MCP to identify available components."
+/design-theme "Apply theme variations with [color palette/design language]. Use shadcn MCP theme configuration."
+/design-implement "Add interactivity and animations to the design. Build with shadcn/ui components via shadcn MCP."
 
-# Component conversion
-/shadcn "Convert design to shadcn components with proper MCP context"
+# Component implementation (shadcn MCP required)
+/agent design-review "Implement [component name] using shadcn MCP. First check available shadcn/ui components, then implement following shadcn patterns."
+
+# Component conversion with shadcn MCP
+/agent general-purpose "Use shadcn MCP to convert this design to shadcn/ui components. Check component library first, install needed components, then implement."
 ```
 
 #### Design Process Integration:
@@ -345,5 +434,13 @@ To use this configuration:
 1. Update the Supabase MCP configuration with your credentials
 2. Save this file as `CLAUDE.md` in your project root
 3. Restart Claude Code to load the MCP servers
-4. The Semgrep and Supabase tools will be available in your Claude Code session
-5. Use the security review commands and backend development workflows
+4. All MCP tools will be available in your Claude Code session:
+   - Semgrep for security scanning
+   - Supabase for database operations
+   - Chrome DevTools for browser automation
+   - n8n for workflow management
+   - **shadcn for UI component development (REQUIRED for all design work)**
+   - Context7 for documentation
+   - Linear for project management
+5. Use the security review commands, backend development workflows, and design workflows
+6. **Important**: All design agents MUST use shadcn MCP for component implementation
