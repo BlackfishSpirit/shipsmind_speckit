@@ -52,25 +52,25 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // SPINX Digital inspired brand colors
+        // UI/UX color theme brand colors
         brand: {
-          50: "#f7fee7",
-          100: "#ecfccb",
-          200: "#d9f99d",
-          300: "#bef264",
-          400: "#a3e635",
-          500: "#84cc16",
-          600: "#65a30d",
-          700: "#4d7c0f",
-          800: "#365314",
-          900: "#1a2e05",
-          950: "#0a0f02",
+          50: "#f5f3ff",
+          100: "#ede9fe",
+          200: "#ddd6fe",
+          300: "#c4b5fd",
+          400: "#a78bfa",
+          500: "#592EF2", // Purple
+          600: "#4c27ce",
+          700: "#4120aa",
+          800: "#361a86",
+          900: "#2d1662",
+          950: "#1a0d3a",
         },
-        // SPINX specific colors
+        // UI/UX specific colors
         spinx: {
-          dark: "#16171a",
-          lime: "#b4e300",
-          "lime-dark": "#9cc700",
+          dark: "#141926", // Dark Navy
+          lime: "#29F280", // Bright Green
+          "lime-dark": "#24733F", // Dark Green
         },
       },
       borderRadius: {

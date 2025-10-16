@@ -4,77 +4,79 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* UI/UX Color Theme - Light Mode */
+    --background: 213 25% 95%; /* Light Blue-Gray */
+    --foreground: 225 30% 11%; /* Dark Navy #141926 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card: 0 0% 100%; /* White cards */
+    --card-foreground: 225 30% 11%; /* Dark Navy */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 225 30% 11%; /* Dark Navy */
 
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 253 88% 56%; /* Purple #592EF2 */
+    --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 140 52% 29%; /* Dark Green #24733F */
+    --secondary-foreground: 0 0% 100%; /* White */
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 213 25% 85%; /* Muted Blue-Gray */
+    --muted-foreground: 225 30% 35%; /* Lighter Dark Navy */
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 146 88% 55%; /* Bright Green #29F280 */
+    --accent-foreground: 225 30% 11%; /* Dark Navy */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%; /* Red */
+    --destructive-foreground: 0 0% 100%; /* White */
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+    --border: 213 25% 79%; /* Light Blue-Gray #BFCAD9 */
+    --input: 213 25% 79%; /* Light Blue-Gray */
+    --ring: 253 88% 56%; /* Purple focus ring */
 
     --radius: 0.5rem;
 
-    /* Brand colors */
-    --brand-50: 240 100% 97%;
-    --brand-100: 240 95% 92%;
-    --brand-200: 240 89% 85%;
-    --brand-300: 240 83% 77%;
-    --brand-400: 240 78% 69%;
-    --brand-500: 240 73% 61%;
-    --brand-600: 240 68% 53%;
-    --brand-700: 240 61% 45%;
-    --brand-800: 240 55% 37%;
-    --brand-900: 240 49% 29%;
+    /* UI/UX Brand Colors */
+    --brand-50: 253 88% 97%;
+    --brand-100: 253 88% 92%;
+    --brand-200: 253 88% 85%;
+    --brand-300: 253 88% 77%;
+    --brand-400: 253 88% 69%;
+    --brand-500: 253 88% 56%; /* Purple */
+    --brand-600: 253 88% 45%;
+    --brand-700: 253 88% 35%;
+    --brand-800: 253 88% 25%;
+    --brand-900: 253 88% 15%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* UI/UX Color Theme - Dark Mode */
+    --background: 225 30% 11%; /* Dark Navy #141926 */
+    --foreground: 213 25% 79%; /* Light Blue-Gray #BFCAD9 */
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 225 30% 15%; /* Slightly lighter navy for cards */
+    --card-foreground: 213 25% 79%; /* Light Blue-Gray */
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 225 30% 15%; /* Slightly lighter navy */
+    --popover-foreground: 213 25% 79%; /* Light Blue-Gray */
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
+    --primary: 253 88% 56%; /* Purple #592EF2 */
+    --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 140 52% 29%; /* Dark Green #24733F */
+    --secondary-foreground: 0 0% 100%; /* White */
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 225 30% 20%; /* Lighter Navy */
+    --muted-foreground: 213 25% 65%; /* Muted Blue-Gray */
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 146 88% 55%; /* Bright Green #29F280 */
+    --accent-foreground: 225 30% 11%; /* Dark Navy */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%; /* Red */
+    --destructive-foreground: 0 0% 100%; /* White */
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 225 30% 20%; /* Navy border */
+    --input: 225 30% 20%; /* Navy input */
+    --ring: 253 88% 56%; /* Purple focus ring */
   }
 }
 
@@ -93,32 +95,32 @@
   }
 }
 
-/* SPINX Digital inspired styles */
+/* UI/UX Color Theme inspired styles */
 @layer utilities {
   .gradient-text {
-    background: linear-gradient(135deg, #b4e300 0%, #84cc16 100%);
+    background: linear-gradient(135deg, #29F280 0%, #24733F 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .text-lime-glow {
-    color: #b4e300;
-    text-shadow: 0 0 10px rgba(180, 227, 0, 0.3);
+    color: #29F280; /* Bright Green */
+    text-shadow: 0 0 10px rgba(41, 242, 128, 0.3);
   }
 
   .bg-spinx-dark {
-    background-color: #16171a;
+    background-color: #141926; /* Dark Navy */
   }
 
   .border-lime-glow {
-    border-color: #b4e300;
-    box-shadow: 0 0 0 1px rgba(180, 227, 0, 0.2);
+    border-color: #29F280; /* Bright Green */
+    box-shadow: 0 0 0 1px rgba(41, 242, 128, 0.2);
   }
 
   .card-dark {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(190, 202, 216, 0.05); /* Light Blue-Gray tint */
+    border: 1px solid rgba(89, 46, 242, 0.2); /* Purple border */
     backdrop-filter: blur(10px);
   }
 }
