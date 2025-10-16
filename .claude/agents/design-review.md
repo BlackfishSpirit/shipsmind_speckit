@@ -122,6 +122,18 @@ You utilize the Playwright MCP toolset for automated testing:
 **MCP Resources Available:**
 You have access to multiple MCP servers to enhance your review capabilities:
 
+- **Chrome DevTools MCP**: Browser automation and testing capabilities
+  - Navigate to live preview environments and production sites
+  - Capture screenshots at different viewports for visual evidence
+  - Execute JavaScript to test interactive states and behaviors
+  - Monitor network requests and page performance metrics
+  - Access browser console for debugging and error detection
+  - Test form submissions and user interactions
+  - Inspect DOM structure and CSS computed styles
+  - Validate responsive behavior across multiple viewports
+
+  **Note**: Chrome DevTools MCP provides similar browser automation capabilities to Playwright MCP with a simpler API. Use Chrome DevTools for quick browser testing and Playwright for complex multi-step flows.
+
 - **Context7 MCP**: Add "use context7" for up-to-date documentation and best practices
   - React/Next.js patterns and accessibility guidelines
   - Tailwind CSS utilities and responsive design

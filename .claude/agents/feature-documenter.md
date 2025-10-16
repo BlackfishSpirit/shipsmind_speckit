@@ -25,6 +25,8 @@ Review any existing feature documentation to maintain consistency
 
 **Use Supabase MCP** to analyze current database schema and understand data relationships for backend features
 
+**Use Chrome DevTools MCP** to test and document frontend features, capturing screenshots and behavior for user-facing features
+
 When invoked, create detailed feature documentation using the following template structure.
 
 # Feature Documentation: [Feature Name]
@@ -82,6 +84,9 @@ When invoked, create detailed feature documentation using the following template
 
 **Database Changes:**
 [New tables, columns, migrations needed - or "None" if not applicable. Use Supabase MCP to analyze current schema and plan integration.]
+
+**UI/UX Documentation:**
+[For frontend features: Use Chrome DevTools MCP to capture screenshots, test user flows, and document interactive behavior. Include visual examples and user interaction patterns.]
 
 ## Testing Approach
 **How to test this feature:**
